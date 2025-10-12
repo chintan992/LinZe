@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
 import 'package:linze/features/anime_detail/presentation/screen/anime_detail_screen.dart';
 import 'package:linze/features/profile_settings/presentation/screen/profile_settings_screen.dart';
-import 'package:linze/core/api/api_service.dart';
 
 class SearchDiscoveryScreen extends StatefulWidget {
-  const SearchDiscoveryScreen({Key? key}) : super(key: key);
+  const SearchDiscoveryScreen({super.key});
 
   @override
   State<SearchDiscoveryScreen> createState() => _SearchDiscoveryScreenState();
@@ -238,9 +236,9 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          if (anime.japaneseTitle?.isNotEmpty == true)
+                                          if (anime.japaneseTitle.isNotEmpty)
                                             Text(
-                                              anime.japaneseTitle!,
+                                              anime.japaneseTitle,
                                               style: GoogleFonts.plusJakartaSans(
                                                 color: const Color(0xFF8E8E93),
                                                 fontSize: 14,
@@ -311,7 +309,7 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Container(
+                    child: SizedBox(
                       height: 40,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
@@ -381,15 +379,15 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                     margin: const EdgeInsets.only(bottom: 20),
                     child: trendingData.when(
                       data: (data) {
-                        final trending = data?.data ?? [];
-                        if (trending.isEmpty) {
+                        final trending = data.data;
+                        if (trending?.isEmpty ?? true) {
                           return const Center(
                             child: Text('No trending anime available'),
                           );
                         }
                         return ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: trending.length,
+                          itemCount: trending!.length,
                           itemBuilder: (context, index) {
                             final anime = trending[index];
                             return GestureDetector(

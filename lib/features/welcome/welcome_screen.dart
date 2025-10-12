@@ -4,7 +4,7 @@ import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({Key? key}) : super(key: key);
+  const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +133,7 @@ class WelcomeScreen extends StatelessWidget {
                                 color: Color(0xFF5B13EC),
                                 width: 1,
                               ),
-                              backgroundColor: const Color(0xFF5B13EC).withOpacity(0.3),
+                              backgroundColor: const Color(0xFF5B13EC).withValues(alpha: 0.3),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.0),

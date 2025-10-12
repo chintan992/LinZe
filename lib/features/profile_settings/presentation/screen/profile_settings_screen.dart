@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linze/features/welcome/welcome_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
-  const ProfileSettingsScreen({Key? key}) : super(key: key);
+  const ProfileSettingsScreen({super.key});
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -17,6 +17,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     await prefs.setBool('isLoggedIn', false);
     
     // Navigate back to welcome screen
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const WelcomeScreen()),
       (route) => false,
@@ -223,7 +224,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Container(
+                child: SizedBox(
                   height: 48,
                   child: ElevatedButton(
                     onPressed: _logout,
@@ -340,8 +341,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF5B13EC),
-        activeTrackColor: const Color(0xFF5B13EC).withOpacity(0.5),
+        activeThumbColor: const Color(0xFF5B13EC),
+        activeTrackColor: const Color(0xFF5B13EC).withValues(alpha: 0.5),
         inactiveThumbColor: const Color(0xFF888888),
         inactiveTrackColor: const Color(0xFF444444),
       ),

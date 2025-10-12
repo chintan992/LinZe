@@ -4,7 +4,7 @@ import 'package:linze/features/home/presentation/screen/main_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginSignupScreen extends StatefulWidget {
-  const LoginSignupScreen({Key? key}) : super(key: key);
+  const LoginSignupScreen({super.key});
 
   @override
   State<LoginSignupScreen> createState() => _LoginSignupScreenState();
@@ -41,6 +41,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
       await prefs.setBool('isLoggedIn', true);
       
       // Navigate to main screen
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -103,7 +104,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                         width: 96,
                         height: 96,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF5B13EC).withOpacity(0.2),
+                          color: const Color(0xFF5B13EC).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Icon(

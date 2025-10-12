@@ -6,7 +6,6 @@ import 'package:video_player/video_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linze/core/models/streaming_models.dart';
 import 'package:linze/core/services/anime_provider.dart';
-import 'package:linze/core/api/api_service.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final StreamingLink streamingLink;
@@ -15,12 +14,12 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String episodeId;
 
   const VideoPlayerScreen({
-    Key? key,
+    super.key,
     required this.streamingLink,
     required this.animeTitle,
     required this.episodeTitle,
     required this.episodeId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -413,7 +412,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           _hasSkippedIntro = false;
                         });
                       },
-                      activeColor: const Color(0xFF5B13EC),
+                            activeThumbColor: const Color(0xFF5B13EC),
                     ),
                     SwitchListTile(
                       title: Text(
@@ -428,7 +427,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           _hasSkippedOutro = false;
                         });
                       },
-                      activeColor: const Color(0xFF5B13EC),
+                            activeThumbColor: const Color(0xFF5B13EC),
                     ),
                     
                     // Subtitle selection

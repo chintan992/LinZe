@@ -7,7 +7,7 @@ import 'package:linze/features/home/presentation/screen/my_list_screen.dart';
 import 'package:linze/features/home/presentation/screen/downloads_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();

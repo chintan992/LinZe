@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart';
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
 import 'package:linze/features/welcome/welcome_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';

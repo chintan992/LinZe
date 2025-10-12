@@ -4,13 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
-import 'package:linze/core/api/api_service.dart';
 import 'package:linze/features/video_player/presentation/screen/video_player_screen.dart';
 
 class AnimeDetailScreen extends ConsumerStatefulWidget {
   final Anime anime;
   
-  const AnimeDetailScreen({Key? key, required this.anime}) : super(key: key);
+  const AnimeDetailScreen({super.key, required this.anime});
 
   @override
   ConsumerState<AnimeDetailScreen> createState() => _AnimeDetailScreenState();
@@ -26,6 +25,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         type: 'sub',
       );
 
+      if (!mounted) return;
+      
       if (streamingInfo.streamingLink != null) {
         Navigator.push(
           context,
@@ -39,6 +40,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           ),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('No streaming link available for this episode'),
@@ -47,6 +49,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to load episode: $e'),
@@ -186,7 +189,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: Container(
+                                child: SizedBox(
                                   height: 48,
                                   child: ElevatedButton(
                                     onPressed: () {
@@ -225,12 +228,12 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Container(
+                                child: SizedBox(
                                   height: 48,
                                   child: OutlinedButton(
                                     onPressed: () {},
                                     style: OutlinedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF5B13EC).withOpacity(0.2),
+                                      backgroundColor: const Color(0xFF5B13EC).withValues(alpha: 0.2),
                                       foregroundColor: Colors.white,
                                       side: BorderSide.none,
                                       shape: RoundedRectangleBorder(
@@ -438,7 +441,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      ref.refresh(animeDetailProvider(widget.anime.id));
+                      ref.invalidate(animeDetailProvider(widget.anime.id));
                     },
                     child: const Text('Retry'),
                   ),

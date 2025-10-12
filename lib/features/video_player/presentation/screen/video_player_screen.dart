@@ -42,13 +42,17 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   Future<void> _loadServersAndInitializePlayer() async {
     try {
-      // Load available servers first
+      // Get servers from the streaming API response instead of separate endpoint
       final apiService = ref.read(apiServiceProvider);
-      final servers = await apiService.getServers(widget.episodeId.split('?')[0]); // Extract anime ID from episode ID
+      final streamingInfo = await apiService.getStreamingInfo(
+        id: widget.episodeId,
+        server: 'HD-2', // Use HD-2 as default
+        type: widget.streamingLink.type ?? 'sub',
+      );
       
       setState(() {
-        _availableServers = servers;
-        _selectedServer = servers.isNotEmpty ? servers.first : null;
+        _availableServers = streamingInfo.servers ?? [];
+        _selectedServer = _availableServers.isNotEmpty ? _availableServers.first : null;
         _selectedType = widget.streamingLink.type ?? 'sub';
       });
 
@@ -127,6 +131,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _isLoading = true;
       _selectedServer = server;
       _selectedType = type;
+      _errorMessage = null;
     });
 
     try {
@@ -136,11 +141,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
       // Get new streaming info
       final apiService = ref.read(apiServiceProvider);
-             final streamingInfo = await apiService.getStreamingInfo(
-               id: widget.episodeId,
-               server: server.serverName ?? 'HD-2',
-               type: type,
-             );
+      final streamingInfo = await apiService.getStreamingInfo(
+        id: widget.episodeId,
+        server: server.serverName ?? 'HD-2',
+        type: type,
+      );
 
       if (streamingInfo.streamingLink?.link?.file != null) {
         final videoUrl = streamingInfo.streamingLink!.link!.file!;
@@ -187,6 +192,17 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         setState(() {
           _isLoading = false;
         });
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Switched to ${server.serverName} (${type.toUpperCase()})'),
+              backgroundColor: const Color(0xFF5B13EC),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       } else {
         setState(() {
           _errorMessage = 'No video source available for selected server';
@@ -198,92 +214,158 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _errorMessage = 'Failed to switch server: $e';
         _isLoading = false;
       });
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to switch server: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
   void _showServerSelectionDialog() {
+    String tempSelectedType = _selectedType;
+    Server? tempSelectedServer = _selectedServer;
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF2C2C2E),
-          title: Text(
-            'Select Server & Audio',
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Audio Type Selection
-                Text(
-                  'Audio Type',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF2C2C2E),
+              title: Text(
+                'Select Server & Audio',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 8),
-                Row(
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _buildAudioTypeButton('sub', 'Sub'),
+                    // Audio Type Selection
+                    Text(
+                      'Audio Type',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildAudioTypeButton('sub', 'Sub', tempSelectedType, (type) {
+                            setDialogState(() {
+                              tempSelectedType = type;
+                              // Reset server selection when audio type changes
+                              final availableServersForType = _availableServers
+                                  .where((server) => server.type == tempSelectedType)
+                                  .toList();
+                              tempSelectedServer = availableServersForType.isNotEmpty 
+                                  ? availableServersForType.first 
+                                  : null;
+                            });
+                          }),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildAudioTypeButton('dub', 'Dub', tempSelectedType, (type) {
+                            setDialogState(() {
+                              tempSelectedType = type;
+                              // Reset server selection when audio type changes
+                              final availableServersForType = _availableServers
+                                  .where((server) => server.type == tempSelectedType)
+                                  .toList();
+                              tempSelectedServer = availableServersForType.isNotEmpty 
+                                  ? availableServersForType.first 
+                                  : null;
+                            });
+                          }),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Server Selection
+                    Text(
+                      'Available Servers (${tempSelectedType.toUpperCase()})',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Expanded(
-                      child: _buildAudioTypeButton('dub', 'Dub'),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: _availableServers
+                              .where((server) => server.type == tempSelectedType)
+                              .map((server) => _buildServerButton(
+                                server, 
+                                tempSelectedServer?.serverName == server.serverName,
+                                () {
+                                  setDialogState(() {
+                                    tempSelectedServer = server;
+                                  });
+                                },
+                              ))
+                              .toList(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                
-                // Server Selection
-                Text(
-                  'Available Servers',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFF8E8E93),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                ..._availableServers
-                    .where((server) => server.type == _selectedType)
-                    .map((server) => _buildServerButton(server))
-                    .toList(),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.plusJakartaSans(
-                  color: const Color(0xFF8E8E93),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    if (tempSelectedServer != null) {
+                      _switchServer(tempSelectedServer!, tempSelectedType);
+                    }
+                  },
+                  child: Text(
+                    'Apply',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFF5B13EC),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildAudioTypeButton(String type, String label) {
-    final isSelected = _selectedType == type;
+  Widget _buildAudioTypeButton(String type, String label, String selectedType, Function(String) onTap) {
+    final isSelected = selectedType == type;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedType = type;
-        });
-      },
+      onTap: () => onTap(type),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
@@ -303,15 +385,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-  Widget _buildServerButton(Server server) {
-    final isSelected = _selectedServer?.serverName == server.serverName;
+  Widget _buildServerButton(Server server, bool isSelected, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: () {
-          Navigator.of(context).pop();
-          _switchServer(server, _selectedType);
-        },
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
@@ -382,14 +460,38 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            Text(
-              widget.episodeTitle,
-              style: GoogleFonts.plusJakartaSans(
-                color: const Color(0xFFA7A7A7),
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.episodeTitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFFA7A7A7),
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (_selectedServer != null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5B13EC),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_selectedServer!.serverName} (${_selectedType.toUpperCase()})',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),

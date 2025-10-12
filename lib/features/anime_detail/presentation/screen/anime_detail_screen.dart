@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
 import 'package:linze/features/video_player/presentation/screen/video_player_screen.dart';
+import 'package:linze/core/providers/user_preferences_provider.dart';
 
 class AnimeDetailScreen extends ConsumerStatefulWidget {
   final Anime anime;
@@ -18,11 +19,14 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
 class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   Future<void> _playEpisode(Episode episode, int episodeIndex, List<Episode> episodes) async {
     try {
+      // Get user preferences
+      final userPreferences = ref.read(userPreferencesProvider);
+      
       final apiService = ref.read(apiServiceProvider);
       final streamingInfo = await apiService.getStreamingInfo(
         id: episode.id,
-        server: 'HD-2',
-        type: 'sub',
+        server: userPreferences.defaultServer,
+        type: userPreferences.preferredAudioType,
       );
 
       if (!mounted) return;

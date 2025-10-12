@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linze/features/welcome/welcome_screen.dart';
+import 'package:linze/core/providers/user_preferences_provider.dart';
+import 'package:linze/core/services/user_preferences_service.dart';
 
-class ProfileSettingsScreen extends StatefulWidget {
+class ProfileSettingsScreen extends ConsumerStatefulWidget {
   const ProfileSettingsScreen({super.key});
 
   @override
-  State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+  ConsumerState<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
 }
 
-class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
@@ -170,24 +173,82 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 _buildSwitchListTile(
                   icon: Icons.notifications,
                   title: 'Notifications',
-                  value: true,
+                  value: ref.watch(userPreferencesProvider).notificationsEnabled,
                   onChanged: (value) {
-                    setState(() {});
+                    ref.read(userPreferencesProvider.notifier).updateNotificationsEnabled(value);
                   },
                 ),
                 _buildListTile(
                   icon: Icons.high_quality,
                   title: 'Streaming Quality',
-                  trailingText: 'Auto',
-                  onTap: () {},
+                  trailingText: ref.watch(userPreferencesProvider).streamingQuality,
+                  onTap: () => _showQualityDialog(),
                 ),
                 _buildSwitchListTile(
                   icon: Icons.data_saver_on,
                   title: 'Data Saver',
-                  value: false,
+                  value: ref.watch(userPreferencesProvider).dataSaverMode,
                   onChanged: (value) {
-                    setState(() {});
+                    ref.read(userPreferencesProvider.notifier).updateDataSaverMode(value);
                   },
+                ),
+              ]),
+            ),
+            // Video Player Settings Section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16.0, top: 32.0),
+                child: Text(
+                  'Video Player Settings',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            // Video Player Settings List Items
+            SliverList(
+              delegate: SliverChildListDelegate([
+                _buildListTile(
+                  icon: Icons.audiotrack,
+                  title: 'Preferred Audio',
+                  trailingText: ref.watch(userPreferencesProvider).preferredAudioType.toUpperCase(),
+                  onTap: () => _showAudioTypeDialog(),
+                ),
+                _buildListTile(
+                  icon: Icons.dns,
+                  title: 'Default Server',
+                  trailingText: ref.watch(userPreferencesProvider).defaultServer,
+                  onTap: () => _showServerDialog(),
+                ),
+                _buildSwitchListTile(
+                  icon: Icons.skip_next,
+                  title: 'Auto Skip Intro',
+                  value: ref.watch(userPreferencesProvider).autoSkipIntro,
+                  onChanged: (value) {
+                    ref.read(userPreferencesProvider.notifier).updateAutoSkipIntro(value);
+                  },
+                ),
+                _buildSwitchListTile(
+                  icon: Icons.skip_previous,
+                  title: 'Auto Skip Outro',
+                  value: ref.watch(userPreferencesProvider).autoSkipOutro,
+                  onChanged: (value) {
+                    ref.read(userPreferencesProvider.notifier).updateAutoSkipOutro(value);
+                  },
+                ),
+                _buildListTile(
+                  icon: Icons.speed,
+                  title: 'Default Playback Speed',
+                  trailingText: '${ref.watch(userPreferencesProvider).defaultPlaybackSpeed}x',
+                  onTap: () => _showPlaybackSpeedDialog(),
+                ),
+                _buildListTile(
+                  icon: Icons.restore,
+                  title: 'Reset Video Settings',
+                  onTap: () => _showResetDialog(),
                 ),
               ]),
             ),
@@ -350,5 +411,335 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         onChanged(!value);
       },
     );
+  }
+
+  void _showAudioTypeDialog() {
+    final currentAudioType = ref.read(userPreferencesProvider).preferredAudioType;
+    final audioTypes = UserPreferencesService.getAudioTypes();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2E),
+          title: Text(
+            'Select Preferred Audio',
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: audioTypes.map((audioType) {
+              final isSelected = audioType == currentAudioType;
+              return ListTile(
+                title: Text(
+                  audioType.toUpperCase(),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                subtitle: Text(
+                  audioType == 'sub' ? 'Subtitled' : 'Dubbed',
+                  style: GoogleFonts.plusJakartaSans(color: Colors.grey),
+                ),
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
+                      width: 2,
+                    ),
+                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 16,
+                        )
+                      : null,
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier).updatePreferredAudioType(audioType);
+                  Navigator.of(context).pop();
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showServerDialog() {
+    final currentServer = ref.read(userPreferencesProvider).defaultServer;
+    final servers = UserPreferencesService.getAvailableServers();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2E),
+          title: Text(
+            'Select Default Server',
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: servers.map((server) {
+              final isSelected = server == currentServer;
+              return ListTile(
+                title: Text(
+                  server,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                subtitle: Text(
+                  _getServerDescription(server),
+                  style: GoogleFonts.plusJakartaSans(color: Colors.grey),
+                ),
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
+                      width: 2,
+                    ),
+                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 16,
+                        )
+                      : null,
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier).updateDefaultServer(server);
+                  Navigator.of(context).pop();
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showQualityDialog() {
+    final currentQuality = ref.read(userPreferencesProvider).streamingQuality;
+    final qualities = UserPreferencesService.getStreamingQualities();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2E),
+          title: Text(
+            'Select Streaming Quality',
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: qualities.map((quality) {
+              final isSelected = quality == currentQuality;
+              return ListTile(
+                title: Text(
+                  quality.toUpperCase(),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                subtitle: Text(
+                  quality == 'auto' ? 'Automatically adjust based on connection' : 'Fixed quality',
+                  style: GoogleFonts.plusJakartaSans(color: Colors.grey),
+                ),
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
+                      width: 2,
+                    ),
+                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 16,
+                        )
+                      : null,
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier).updateStreamingQuality(quality);
+                  Navigator.of(context).pop();
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPlaybackSpeedDialog() {
+    final currentSpeed = ref.read(userPreferencesProvider).defaultPlaybackSpeed;
+    final speeds = UserPreferencesService.getPlaybackSpeeds();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2E),
+          title: Text(
+            'Select Default Playback Speed',
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: speeds.map((speed) {
+              final isSelected = speed == currentSpeed;
+              return ListTile(
+                title: Text(
+                  '${speed}x',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+                subtitle: Text(
+                  speed == 1.0 ? 'Normal speed' : speed < 1.0 ? 'Slower' : 'Faster',
+                  style: GoogleFonts.plusJakartaSans(color: Colors.grey),
+                ),
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
+                      width: 2,
+                    ),
+                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 16,
+                        )
+                      : null,
+                ),
+                onTap: () {
+                  ref.read(userPreferencesProvider.notifier).updateDefaultPlaybackSpeed(speed);
+                  Navigator.of(context).pop();
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showResetDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2E),
+          title: Text(
+            'Reset Video Settings',
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to reset all video player settings to their default values?',
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFF8E8E93),
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                ref.read(userPreferencesProvider.notifier).resetToDefault();
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Video settings reset to default',
+                      style: GoogleFonts.plusJakartaSans(),
+                    ),
+                    backgroundColor: const Color(0xFF5B13EC),
+                  ),
+                );
+              },
+              child: Text(
+                'Reset',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getServerDescription(String server) {
+    switch (server) {
+      case 'HD-1':
+        return 'High quality server (recommended)';
+      case 'HD-2':
+        return 'Alternative high quality server';
+      case 'HD-3':
+        return 'Backup high quality server';
+      case 'Multi Quality':
+        return 'Multiple quality options available';
+      default:
+        return 'Standard server';
+    }
   }
 }

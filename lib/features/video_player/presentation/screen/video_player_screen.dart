@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linze/core/models/streaming_models.dart';
 import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
+import 'package:linze/core/providers/user_preferences_provider.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final StreamingLink streamingLink;
@@ -42,7 +43,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   Server? _selectedServer;
   String _selectedType = 'sub';
   
-  // Enhanced features
+  // Enhanced features - will be initialized from user preferences
   double _playbackSpeed = 1.0;
   bool _isAutoSkipIntro = true;
   bool _isAutoSkipOutro = true;
@@ -61,17 +62,33 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeUserPreferences();
     _loadServersAndInitializePlayer();
+  }
+
+  void _initializeUserPreferences() {
+    // Initialize settings from user preferences
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userPreferences = ref.read(userPreferencesProvider);
+      setState(() {
+        _playbackSpeed = userPreferences.defaultPlaybackSpeed;
+        _isAutoSkipIntro = userPreferences.autoSkipIntro;
+        _isAutoSkipOutro = userPreferences.autoSkipOutro;
+      });
+    });
   }
 
   Future<void> _loadServersAndInitializePlayer() async {
     try {
+      // Get user preferences
+      final userPreferences = ref.read(userPreferencesProvider);
+      
       // Get servers from the streaming API response instead of separate endpoint
       final apiService = ref.read(apiServiceProvider);
       final streamingInfo = await apiService.getStreamingInfo(
         id: widget.episodeId,
-        server: 'HD-2', // Use HD-2 as default
-        type: widget.streamingLink.type ?? 'sub',
+        server: userPreferences.defaultServer, // Use user's preferred server
+        type: userPreferences.preferredAudioType, // Use user's preferred audio type
       );
       
       setState(() {

@@ -20,13 +20,41 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
   String _currentSearchQuery = '';
   
   final List<String> _genres = [
-    'All', 'Action', 'Adventure', 'Comedy', 'Drama', 
-    'Fantasy', 'Sci-Fi', 'Slice of Life'
+    'All', 'Top Airing', 'Most Popular', 'Most Favorite', 'Completed',
+    'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy'
   ];
   
   final List<String> _popularSearches = [
     'Attack on Titan', 'New Releases', 'Isekai', 'One Piece', 'Movies'
   ];
+
+  // Map display names to API category names
+  String _getCategoryName(String displayName) {
+    switch (displayName) {
+      case 'All':
+        return 'top-airing'; // Default category
+      case 'Top Airing':
+        return 'top-airing';
+      case 'Most Popular':
+        return 'most-popular';
+      case 'Most Favorite':
+        return 'most-favorite';
+      case 'Completed':
+        return 'completed';
+      case 'Action':
+        return 'genre/action';
+      case 'Adventure':
+        return 'genre/adventure';
+      case 'Comedy':
+        return 'genre/comedy';
+      case 'Drama':
+        return 'genre/drama';
+      case 'Fantasy':
+        return 'genre/fantasy';
+      default:
+        return 'top-airing';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +62,7 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
       backgroundColor: const Color(0xFF1A1A1A),
       body: Consumer(
         builder: (context, ref, child) {
-          final trendingData = ref.watch(categoryProvider('trending'));
+          final trendingData = ref.watch(categoryProvider('top-airing'));
           final searchData = _currentSearchQuery.isNotEmpty 
               ? ref.watch(searchProvider(_currentSearchQuery))
               : null;
@@ -294,7 +322,8 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                           return GestureDetector(
                             onTap: () {
                               // Navigate to category screen
-                              ref.read(categoryProvider(genre.toLowerCase()));
+                              final categoryName = _getCategoryName(genre);
+                              ref.read(categoryProvider(categoryName));
                             },
                             child: Container(
                               margin: const EdgeInsets.only(right: 12),

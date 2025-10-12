@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Anime Discovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#007AFF",
+            "background-light": "#f5f5f5",
+            "background-dark": "#1A1A1A",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans", "Noto Sans", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<!-- Top App Bar -->
+<div class="flex items-center bg-background-dark p-4 pb-2 justify-between">
+<h2 class="text-white text-2xl font-bold leading-tight tracking-[-0.015em] flex-1">Discover</h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<span class="material-symbols-outlined text-white text-3xl">account_circle</span>
+</button>
+</div>
+</div>
+<!-- Search Bar -->
+<div class="px-4 py-3">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-[#2c2c2e]">
+<div class="text-[#8e8e93] flex items-center justify-center pl-4">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-[#8e8e93] px-4 pl-2 text-base font-normal leading-normal" placeholder="Search for anime, characters, or genres" value=""/>
+</div>
+</label>
+</div>
+<!-- Genre Chips -->
+<h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Explore by Genre</h2>
+<div class="flex gap-3 px-4 pb-3 overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">All</p></div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Action</p></div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Adventure</p></div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Comedy</p></div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Drama</p></div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Fantasy</p></div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Sci-Fi</p></div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Slice of Life</p></div>
+</div>
+<!-- Trending Now Section -->
+<h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Trending Now</h2>
+<div class="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+<div class="flex items-stretch px-4 gap-4">
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-40 transform transition-transform duration-200 hover:scale-105">
+<div class="w-full bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg flex flex-col" data-alt="Cover art for the anime Attack on Titan" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCiSlMUxbN-nGe9Rd2GtRsHWqEhbzhoT9yiWIISQVXY4WnyvkU7CXgTNRLt0kimJ94lVB3HdL_lEKdH2wdHMBx1EqAxTb0SWDPF8XRFxepYpkpGNnlSCrPVTikRxPOL234oj9o9Rdo5mnE4L0zN5JIpcguDD2LHn2lBhwj0G_qMqhEd16U0Jwop8XEkQz5toARIh5e4STGKzYsBJFGN__Xiw-c8b7NwDnwRJgKaNloo8S6yMvFpXgyejBXPvnkebdsLunXUsSRiDus");'></div>
+<div>
+<p class="text-white text-base font-medium leading-normal">Attack on Titan</p>
+<p class="text-[#8e8e93] text-sm font-normal leading-normal">Action, Dark Fantasy</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-40 transform transition-transform duration-200 hover:scale-105">
+<div class="w-full bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg flex flex-col" data-alt="Cover art for the anime Jujutsu Kaisen" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuApvhTUkFnq-RGtyTEgOGBbOayz479IQfl_apQvRMyCX5YeQV8Wom6n364RIzALqmbDikWFIXvk2huuk9eyXfUy39inRPc3NCVZSWI1knNYG3nyjbPh-MMijsQ4Wjqqpwvv_L6MBo4dqc6EhGSQaXg_yp175N1vUA-FI3VonO5nhP4rYIuy4-hkfkrGF1un7YL7ogU11IrU0npOeCiIxaaddeoo5IO61j2tL9gFYj2jjKa1_sREwf4jdP4I_8M8NyFHCXcxK7WgjAU");'></div>
+<div>
+<p class="text-white text-base font-medium leading-normal">Jujutsu Kaisen</p>
+<p class="text-[#8e8e93] text-sm font-normal leading-normal">Action, Supernatural</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-40 transform transition-transform duration-200 hover:scale-105">
+<div class="w-full bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg flex flex-col" data-alt="Cover art for the anime Demon Slayer" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBDsuZ-LXV3KVl1hKlarPNsXX6s-oPdBamhH1k7bPcQdCKFi56MOIEMv7ezhmOBJiQmImiYn8ME69Z9h_3XdAFE4iEtlQt314Q0slmMVdUmzWAzrtH0j6SzFgJ3L7_-1H2dqlN1_KdMgnfOafl1wQ2eq_-g4RKFqbsptzhAS6ccPgz9_sE-O9PjB-LCqwbS0OJ3zZm_X_rZMKUYwae_4scs-C7QGF3ke6i5NjZMuWSochk1k9u-79FOwXYAxEZvbIWTJ4EMFPVekAg");'></div>
+<div>
+<p class="text-white text-base font-medium leading-normal">Demon Slayer</p>
+<p class="text-[#8e8e93] text-sm font-normal leading-normal">Action, Adventure</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-40 transform transition-transform duration-200 hover:scale-105">
+<div class="w-full bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg flex flex-col" data-alt="Cover art for the anime My Hero Academia" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPycpauKwQHAw1SyDU84BsOfndTZ88-gRC6GxIoL9WMDhOqzW5CiU2PpVTilOJ4Aia4qce6zxTT74q4nPXnUn4HsihCbOiGryFSzxbKcsZLfP55A2Oey8CN3zKAzp22jLvw9Or3vi3r7OpkIMLFThQmuWHSeRudTOQE2RbGz2nTKp0T-rX_AD1EsOHiu8Vk06ZOcT-PTg19WFSChcAX87YzrtbAh_i8sA00yWn2dKD8FLxWsaEGJKTL8AuKRQbVUga-MidUGI0oIU");'></div>
+<div>
+<p class="text-white text-base font-medium leading-normal">My Hero Academia</p>
+<p class="text-[#8e8e93] text-sm font-normal leading-normal">Action, Superhero</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-40 transform transition-transform duration-200 hover:scale-105">
+<div class="w-full bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg flex flex-col" data-alt="Cover art for the anime Spy x Family" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuATHpfm1OPoreQEJUuhh1n8DurJFIRsOTP-BOfgMqpYgW_m3bFc9xBvU6V9ywTZhtL6i7D95Vy_di7zVzGULB4NE2oVUq9JRQ8jYKniwUNEh-RWhKb0LcMPImla__kbwg6i9PrMgRgB0zKKSpdPP5b1y0u5gXwlBj2Pn8V8hudE-BToAoLOmKx2CUiP3nZmVVth3-sfFlXM2QvdaZ7NV0hJM1vh7xOWu80jo7Y1tfq7gZ4j1WLP2STKgYf0-a6EV9sOGVI3gOETTcg");'></div>
+<div>
+<p class="text-white text-base font-medium leading-normal">Spy x Family</p>
+<p class="text-[#8e8e93] text-sm font-normal leading-normal">Action, Comedy</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Popular Searches Section -->
+<h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-8">Popular Searches</h2>
+<div class="flex flex-wrap gap-3 px-4">
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Attack on Titan</p></div>
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">New Releases</p></div>
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Isekai</p></div>
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">One Piece</p></div>
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-[#2c2c2e] pl-4 pr-4"><p class="text-white text-sm font-medium leading-normal">Movies</p></div>
+</div>
+<div class="h-10"></div>
+</div>
+</body></html>

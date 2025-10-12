@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Profile and Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#5b13ec",
+            "background-light": "#f6f6f8",
+            "background-dark": "#161022",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans", "Noto Sans", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 24px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between sticky top-0 z-10">
+<button class="text-slate-800 dark:text-white flex size-12 shrink-0 items-center justify-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Profile &amp; Settings</h2>
+<div class="flex w-12 items-center justify-end">
+</div>
+</div>
+<div class="p-4 @container">
+<div class="flex w-full flex-col gap-4 @[520px]:flex-row @[520px]:justify-between @[520px]:items-center">
+<div class="flex gap-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-24 h-24" data-alt="User avatar of AnimeFan_92" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuATcP3hJPv-5TbUrys3aOKV6p4vcEfyrv5LkFqPLJqNqM8Tv044un2KjFqhBu2VgWOrYpnYq2hfLNTrj5_Beh5FqpZ9rNOOceeoORQLLtqIMxATFxMo3Po77mhOqVTNeVJEfWihEohm4_Rl98tXVU8h1YaCc7yPau_s9YXTEDt3duK5vS5mC0t3j3xkZtvdAWyDjvFrcNP9gqQCW6J_37nMc-nnUL147XF_hHWKPbLDsncZPpS4RMLBxeKXq-lRcFfWqIoVAg8gygk");'></div>
+<div class="flex flex-col justify-center">
+<p class="text-slate-900 dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">AnimeFan_92</p>
+<p class="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">Premium Member</p>
+</div>
+</div>
+</div>
+</div>
+<div class="px-4">
+<div class="h-px bg-slate-200 dark:bg-slate-700/50 w-full my-4"></div>
+</div>
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Account</h3>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">person</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Edit Profile</p>
+</div>
+<div class="shrink-0">
+<div class="text-slate-400 dark:text-slate-500 flex size-7 items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">history</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Watch History</p>
+</div>
+<div class="shrink-0">
+<div class="text-slate-400 dark:text-slate-500 flex size-7 items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">subscriptions</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Subscription</p>
+</div>
+<div class="shrink-0">
+<div class="text-slate-400 dark:text-slate-500 flex size-7 items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-8">App Settings</h3>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">notifications</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Notifications</p>
+</div>
+<div class="shrink-0">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" id="toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 dark:bg-slate-700 cursor-pointer" for="toggle"></label>
+</div>
+</div>
+</div>
+<style>
+        .toggle-checkbox:checked { right: 0; border-color: #5b13ec; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #5b13ec; }
+    </style>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">high_quality</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Streaming Quality</p>
+</div>
+<div class="flex items-center gap-2">
+<p class="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">Auto</p>
+<div class="text-slate-400 dark:text-slate-500 flex size-7 items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">data_saver_on</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Data Saver</p>
+</div>
+<div class="shrink-0">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" id="toggle2" name="toggle2" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 dark:bg-slate-700 cursor-pointer" for="toggle2"></label>
+</div>
+</div>
+</div>
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-8">Support</h3>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">help</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Help Center</p>
+</div>
+<div class="shrink-0">
+<div class="text-slate-400 dark:text-slate-500 flex size-7 items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-background-light dark:bg-background-dark px-4 min-h-14 justify-between">
+<div class="flex items-center gap-4">
+<div class="text-slate-800 dark:text-white flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0 size-10">
+<span class="material-symbols-outlined">privacy_tip</span>
+</div>
+<p class="text-slate-900 dark:text-white text-base font-normal leading-normal flex-1 truncate">Privacy Policy</p>
+</div>
+<div class="shrink-0">
+<div class="text-slate-400 dark:text-slate-500 flex size-7 items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="p-4 mt-8">
+<button class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-primary text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0">
+            Log Out
+        </button>
+</div>
+<div class="h-10 bg-background-light dark:bg-background-dark"></div>
+</div>
+</body></html>

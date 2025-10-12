@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Anime Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5b13ec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#161022",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "Noto Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body>
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden font-display">
+<div class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between sticky top-0 z-10">
+<div class="text-black dark:text-white flex size-12 shrink-0 items-center">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</div>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-transparent text-black dark:text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+</div>
+</div>
+<div class="@container">
+<div class="@[480px]:px-4 @[480px]:py-3">
+<div class="w-full bg-center bg-no-repeat bg-cover flex flex-col justify-end overflow-hidden bg-background-light dark:bg-background-dark @[480px]:rounded-lg min-h-80" data-alt="Vibrant artwork from the anime series 'Jujutsu Kaisen', featuring the main protagonist." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBvr68iYOymvDo6p4PZRlVHJ4hxyF4AbeVxh_g7eDUiiOUnGPpQEcsi-dQj7WLPHEe--h1J-Ele3zrTsC2tgRb10vsmZu6uaH9UjJS8mUMayRdaucO3dn4jK8uQ3wtAb-Q8otQ0w9p_dNdQv1oVxR_UsfkTw31hBLoLvAlRR0Sq0NQI_Dh-7tvSrDXGhTQMQfTIb7zpiW3rIZEj_S_Rr_Fe60hsV3L_70MuVRfbWZANygWMhvCDIaNeYzGtzuyCfQaJwGvhZTdYUzg");'></div>
+</div>
+</div>
+<h1 class="text-black dark:text-white tracking-light text-[32px] font-bold leading-tight px-4 text-left pb-3 pt-6">Jujutsu Kaisen</h1>
+<div class="flex flex-wrap items-center gap-2 px-4 pb-4">
+<div class="flex items-center gap-1 text-black dark:text-white">
+<span class="material-symbols-outlined text-xl text-yellow-400" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold">4.9</span>
+</div>
+<span class="text-gray-500 dark:text-gray-400 text-sm">•</span>
+<div class="flex gap-2 flex-wrap">
+<span class="bg-gray-200 dark:bg-gray-700 text-black dark:text-white text-xs font-semibold px-2.5 py-1 rounded-full">Action</span>
+<span class="bg-gray-200 dark:bg-gray-700 text-black dark:text-white text-xs font-semibold px-2.5 py-1 rounded-full">Fantasy</span>
+<span class="bg-gray-200 dark:bg-gray-700 text-black dark:text-white text-xs font-semibold px-2.5 py-1 rounded-full">Shounen</span>
+</div>
+</div>
+<div class="flex justify-stretch">
+<div class="flex flex-1 gap-3 flex-wrap px-4 py-3 justify-start">
+<button class="flex flex-1 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] gap-2">
+<span class="material-symbols-outlined">play_arrow</span>
+<span class="truncate">Play Episode</span>
+</button>
+<button class="flex flex-1 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary/20 text-white text-base font-bold leading-normal tracking-[0.015em] gap-2">
+<span class="material-symbols-outlined">add</span>
+<span class="truncate">Add to My List</span>
+</button>
+</div>
+</div>
+<p class="text-gray-600 dark:text-gray-300 text-base font-normal leading-normal pb-3 pt-1 px-4">
+            Yuji Itadori, a kind-hearted high schooler, joins his school's Occult Club for fun, but discovers that its members are actual sorcerers who can manipulate the energy between beings for their own use. He hears about a cursed talisman - the finger of Sukuna, a demon - and its being targeted by other cursed beings.
+        </p>
+<div class="px-4 pt-6 pb-2">
+<h2 class="text-xl font-bold text-black dark:text-white">Episodes</h2>
+</div>
+<div class="flex flex-col gap-4 px-4 py-3">
+<div class="flex items-center gap-4">
+<img class="w-32 h-20 object-cover rounded-lg" data-alt="Thumbnail for Jujutsu Kaisen episode 1." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkJmcozdIu83dPUBdjv0uP-DPJeIrtW4Ru24b89cQHSlc2k4l4T4ypqKkaq2Slr7IRvV-lA-9cbRc6d1Uzz_oSVOENxZ1xSTr5gV7ztMcjH7Ak-L5zhx-VelCQQ6mzwfXrbqCXmeQUSRU2wo339RadoyNHO2AM5SlT1yVHl2_IrnHge3tqz_uovUZl7oyUlwVDspQO8aEyLW494if0CQ7VDaQEzEgqCMJrLbYUXpYo2tEjtoyRzmIrAx6asmOXCuay9Uozqk13E_4"/>
+<div class="flex-1">
+<p class="text-sm text-gray-500 dark:text-gray-400">Episode 1</p>
+<p class="text-base font-bold text-black dark:text-white">Ryomen Sukuna</p>
+</div>
+<button class="text-black dark:text-white">
+<span class="material-symbols-outlined">play_circle</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<img class="w-32 h-20 object-cover rounded-lg" data-alt="Thumbnail for Jujutsu Kaisen episode 2." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHht8G-_NO7z6Gut2YxO6f0EXV2rdKipLHy7e5Yxtxwz-HcMC5MAAeqkCBl3qM1LIcnf4Fh4aXgH_LRb4V9RmoSBvc9K3rfgt1lK1j3CBlXvnrFp5zrw8e_4kC8b2W0uyRiMBMSTO1Y_Wn15wm-pkOdmYVW3U8PgYbtb7dOJT1RSP7W_I8YSIL7kQTWziyGt1FneVGj9w7RE03k4_AGpH7YgmVQCDLtsJDiT5OUvfhUWvnRHgqQc2z0qWki1zKv_-6p8PrgTpYchs"/>
+<div class="flex-1">
+<p class="text-sm text-gray-500 dark:text-gray-400">Episode 2</p>
+<p class="text-base font-bold text-black dark:text-white">For Myself</p>
+</div>
+<button class="text-black dark:text-white">
+<span class="material-symbols-outlined">play_circle</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<img class="w-32 h-20 object-cover rounded-lg" data-alt="Thumbnail for Jujutsu Kaisen episode 3." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBhTSvj8MfQ1ULxubjqTfqBYc-UeRrWmlQZBhxfuRiFHXX9VG8QzrQinRhVg4QQvBf3EEtVYSomBpELkWXNSHQVqDKBVqj2z5byTSSDT_K2SQp7Viyb3KoIyLr2y1sNZY8ARGLUYd4klWZKXh29r_UiZguwWbj8QQDvx-6hjqQmn7iOGLUP_YSTFAhn5douh1XMpBrLAEJBRxlbM5tUfYeLLSebQD02g6yWcT0pp_41Xm-F3EZTSIzTy8rY17RglT5k96t_Rl2zUc"/>
+<div class="flex-1">
+<p class="text-sm text-gray-500 dark:text-gray-400">Episode 3</p>
+<p class="text-base font-bold text-black dark:text-white">Girl of Steel</p>
+</div>
+<button class="text-black dark:text-white">
+<span class="material-symbols-outlined">play_circle</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<img class="w-32 h-20 object-cover rounded-lg" data-alt="Thumbnail for Jujutsu Kaisen episode 4." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcsuAm9iFiX9iZLzJkyEimz32XqIoijHoxkxSjyW28NAN4ef73Vp64kG_HmZgrUBDb4guFUhRYxUXFt5Tfz2Ka6DEdN5-FnSbylFNU3VPkaN_TU3aEMqRb5reeh8Uy1aw1pfSoexrkOtHYAlj_umZrHu-jITzhOBSn4r1zfof7_uh7_k3eF9E-_caTfI4g23g5kUgmiqPYsvtNnJsGridOfl87XASF-GQIWI8kNu_flElMnp4tf94eOVn5ia3nfvOzVnfBDzXXq0w"/>
+<div class="flex-1">
+<p class="text-sm text-gray-500 dark:text-gray-400">Episode 4</p>
+<p class="text-base font-bold text-black dark:text-white">Curse Womb Must Die</p>
+</div>
+<button class="text-black dark:text-white">
+<span class="material-symbols-outlined">play_circle</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

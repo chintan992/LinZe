@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Anime Streaming App</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#8A2BE2",
+            "background-light": "#f6f6f8",
+            "background-dark": "#121212",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans", "Noto Sans", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-dark dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-dark dark group/design-root overflow-x-hidden pb-24">
+<!-- Top App Bar -->
+<div class="flex items-center bg-background-dark p-4 pb-2 justify-between sticky top-0 z-10">
+<div class="text-primary flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
+<span class="material-symbols-outlined text-primary">raven</span>
+</div>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-transparent text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<span class="material-symbols-outlined text-[#EAEAEA]" style="font-size: 28px;">account_circle</span>
+</button>
+</div>
+</div>
+<!-- Search Bar -->
+<div class="px-4 py-3">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+<div class="text-[#A9A9A9] flex border-none bg-[#1F1F1F] items-center justify-center pl-4 rounded-l-xl border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#EAEAEA] focus:outline-0 focus:ring-0 border-none bg-[#1F1F1F] focus:border-none h-full placeholder:text-[#A9A9A9] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search for anime..." value=""/>
+</div>
+</label>
+</div>
+<!-- Hero Banner Carousel -->
+<div class="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+<div class="flex items-stretch p-4 gap-4">
+<div class="flex h-full flex-1 flex-col gap-4 rounded-xl min-w-[300px] sm:min-w-[400px]">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col justify-end p-4" data-alt="Promotional art for a blockbuster anime series with dynamic action poses." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCfoGLZC23vUrf6i28zBTZvQkdCaQO4luSTxpEwK0HtfimeO5ller1BvAL2eGlHFrwywsOUFL2aWxTBneceThdN4YFlFg2TN_lVf_dHpVKl9rtlw2XwjNL0JP1PM5iFjNm2u_2xUXtCoRneQhlR1qdUanUteSpRdQhQlCsIU4Suy9VFD0Z8HBd5XlElUnz3ihBCtJyq_TYhwLBGTOtdif_M9DRUz5JMWmDsuCJkTi6ViBEIKujpEGcdInWngQmMaP1bKPbFCyV9Tl4");'>
+<h3 class="text-white text-xl font-bold">Cybernetic Showdown</h3>
+<p class="text-[#EAEAEA] text-sm">New Series Now Streaming</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-4 rounded-xl min-w-[300px] sm:min-w-[400px]">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col justify-end p-4" data-alt="A tranquil scene from a fantasy anime, with lush landscapes." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBGwuyZgrWKnqhoLqFnosxh6NvWWsF3y_pd7XbHmkdbXa_jwUq3g3sNYEu56hwosNJSMib-pBjvX8yo8RwG-4539i3cefsaSaB6C1yVeU7V1orvoDM2JvaNlS3SBG2RZ-KS6h6VPq4HdTEgj3xxP3ydCc-O5_L4MEjAzJCdEmhyfM0_d4NqzfpovEIHDE4SkWWYOlJE3Occcuw3UFtbqaICLTYHrgQtatoPCmzDBCpC6lFhxgEAO8kfagyxNHpovtmGqjkv7vqfuEk");'>
+<h3 class="text-white text-xl font-bold">Whispers of the Forest</h3>
+<p class="text-[#EAEAEA] text-sm">Season 2 Finale Available</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-4 rounded-xl min-w-[300px] sm:min-w-[400px]">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col justify-end p-4" data-alt="A group of anime characters looking up at a starry night sky." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAFh7A53VT7UNNs64iCqy681u7eEkrcd-B9e_jT1uotLOOAjldOFbJJ8OmZWFIuRF3KHypEimmx5JQBcjcyQknR9Ij9BUQP8noQl9TnAIcbEwTe8zOyEkiXCywH79oe6N1KZfVaPrZiO8yI9aaEgZSELCCYxfGXu6FEaF2uEdKgCha82FPOaOlrI9Y2omqbg8F9T6TtCMuYWBban47rt7oX8uAbO21ygT-VBdnj_FTeuZW1aNpcBU9VHzkQ2elnTgEmxBrdIlh6Hsk");'>
+<h3 class="text-white text-xl font-bold">Starlight Odyssey</h3>
+<p class="text-[#EAEAEA] text-sm">Discover a New Universe</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Continue Watching Section -->
+<h2 class="text-[#EAEAEA] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Continue Watching</h2>
+<div class="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+<div class="flex items-stretch p-4 pt-0 gap-4">
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for an action anime with a male protagonist." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCw2ex1rfagT-RXRFN4DJI8Xc7U36Rvu_EoZO_J2eoLzcDbkEERQFJNoiHz5f-HLZAkDBrHbcwr_z8POIVGOzC6v4LF3x0-MUcjSd_J_jJQ5URiTgjdF_wVOhTYhkLbkGSoEwTl6h6-g9in16r_O-gko6TRrHPk_vpjHB3QOHRlACdDCVsGvvJh61sfw0RO2tSfy5v4XZyWOpTU4QIrreilgRiVsFFwM-X2K6rxtecrtjgebCaKiWTRraty_kGCni_6fPUFtg74o8A");'>
+<div class="w-full h-1 bg-[#1F1F1F] mt-auto">
+<div class="h-full bg-primary" style="width: 75%;"></div>
+</div>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">Shadow Hunter</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">S1 E3</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for a slice-of-life anime with a female protagonist." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA1d9-OtJbm5wHvKSqPPfjr8jPUlR_3ohvsPRIv7heqJOZjIumzIjd2Oflux0t7dsFD3wQ4HOeaniAyp4UrPKvgC7bDPzHsuuczObW176qpNHdzF_LGghoRU0Tu5oM_XQGolKemjQLb4nCjI8tm_gZb9LBFRsbzWPp1O-74YAH3jT0RJFanw_AMLqsHCZhrEkJ7DX8TiHcoRvrZbeAKGUA2Yzgod3xjc6kLTTD7jYuO1kdDWcxYtnf8Z3rEmnEvJeDhQuLXnUKqMpI");'>
+<div class="w-full h-1 bg-[#1F1F1F] mt-auto">
+<div class="h-full bg-primary" style="width: 30%;"></div>
+</div>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">Café Days</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">S2 E1</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for a sci-fi anime with mechs." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDoVPtpB83KcR9fI7VPZqJi3i8n-Lyg30nGpLUbcrq8xyBALqcowVUzFTXFY-1ms6BMu3rDeyA7Yvbu9J1sa2Am1B1QsN0RluCs6e3PJWHuCYtJ8FhDueExaOC1RFD6PYj-4d3bgoKMu9uDEzZQscPvDg-rB8wuJkfnyEBuP3f_I904TX4uxNlJQRhPcjx2ErcdK2KLvSMy-x-1swW7qTuIpYORL6bVU3gCurvYDHPaqnxN1D1LTucYUHA0Hf2QyYKsDl6IXyY72nU");'>
+<div class="w-full h-1 bg-[#1F1F1F] mt-auto">
+<div class="h-full bg-primary" style="width: 90%;"></div>
+</div>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">Iron Rebellion</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">S1 E12</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for a mystery anime with a detective character." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCfzBr9QjilihCg5mbxuma25C4huyF7qnV3L3WMW1miov6EUcJTtXNxID3uTgf-H7xjn0USEfcXpVq0TKA-tcT7tcR64ydydykPRs4LlS25DQKJQhQPd5K73SoTdp-gNNVeJ0zaEP0R3i55E_UDQq-YoWa7vYOCSCaOHZQ3f5uaEGoLo8ofBMVZ9iuYo3ZsJSQ7cnfXkxlH5lUqCTFsnRYyuKZnj-Tpfu-zlihxlgX1fNP434jfNJh1XIwGhThb9I1zBwU5S8N7Qgg");'>
+<div class="w-full h-1 bg-[#1F1F1F] mt-auto">
+<div class="h-full bg-primary" style="width: 50%;"></div>
+</div>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">The Crimson Case</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">S3 E5</p>
+</div>
+</div>
+</div>
+</div>
+<!-- New Releases Section -->
+<h2 class="text-[#EAEAEA] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">New Releases</h2>
+<div class="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+<div class="flex items-stretch p-4 pt-0 gap-4">
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for a new fantasy anime." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCgQuQvyk8Vvkn_HOZ1GW4Yivj1cBAq1VtxJacHAEZ4GcmFfVaFjZvdxX420r1eeeBKMeRZn2YPSbigbZEoTgbI5RRO1CUuqfiIb7HuAxTXykvGU6NrU9K6Dhz1wCKv-5iKj_B6aXwtxtcz8avhGwNiJ3uSxVSxjBUQPBpqJPbQsiTpXBfTvRFfTvRejIE988P9UvDU5s2t3KMrZFq4YtdjByBGEsiUHgeelcLHSxjLLaGV5itqpeT9M19e5PeeqjP074DRmHkgpfc");'>
+<span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">New</span>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">Arcane Echoes</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">Fantasy</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for a new romantic comedy anime." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBT5p-dyEHr4KBN2tZ9ZQyx-GfG7a4y6Yu8iCI4jGpeDla3_045K-H9Krj_ICdrO_RY3FrOwRhRgynw1N9C4VInFz3JbUvOyFzvHTWhHGFIuIRYLFyVsV30UPGGyRLHMbczDwcP2TWIWuAj4Yp3tgv85qzoBjIqD9UKJHeDv-oL1oKwK8HVOkSwFxvuYvjcuyGVJ9xSz5uqdD9zfdzY2spG2lGm7dVjE8t-mhatffYK_fMNxhxaLSloffTyJz7GidlMPvw0rMlTbWo");'>
+<span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">New</span>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">Love in Tokyo</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">Romance</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for a new Shonen anime." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBxdiSc2jg65AksiA7WB6AKiYkyk5QJPuSAombh8SQF2CYEFVb2dotci_FE6T0V5hVdISU_891H3vDmBAoHBOaG_MYCSB3nCBuRnS6Pmx0xjRl1pN8szKUhIfzqttlerVjdYTGy0LF4YrWFXmf3GSy0_LoaUzuslxW8A_1X6ikps4QWx1DmKnkzhwd-M8ZWQhQJVrH_0PHVxeYvoV2qC4EPGwLSzJEwOns59pnI9T68IsC-rIjH8nQ27LG2wrkiv-KoC8UnYv5LhLc");'>
+<span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">Dub</span>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">Blazing Soul</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">Shonen</p>
+</div>
+</div>
+<div class="flex h-full flex-1 flex-col gap-2 rounded-lg min-w-[160px]">
+<div class="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg flex flex-col relative" data-alt="Cover art for a new Isekai anime." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDeGN_Jud3IEo74u32Io7lPcSXscbi25IX8oEe5etZP186ZXe1ktXPnWkwUYq0MjlfpYiMugqFJ1swbJiIaeuEMwUG7_zOJ-v_twYeMProHyEDZofaRmWUBp9Onz3F-iVt9Ueec9H5rrulYWQliR_OVleoO4HneWreUXqXe6lYvHANQ-79EswXQBWfOKYc0-g5cAByBhOM1ID1F90HwrTzQy4whGvTFfgOK0raineEWtoygSiIL7smwbTfs3wtenwekIoGmjLj-cAQ");'>
+<span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">New</span>
+</div>
+<div>
+<p class="text-[#EAEAEA] text-base font-medium leading-normal truncate">Otherworld Gate</p>
+<p class="text-[#A9A9A9] text-sm font-normal leading-normal">Isekai</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation Bar -->
+<div class="fixed bottom-0 left-0 w-full bg-[#1F1F1F] border-t border-t-[#2a2a2a]">
+<div class="flex justify-around items-center h-20">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-xs font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#A9A9A9] hover:text-primary" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="text-xs font-medium">Discover</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#A9A9A9] hover:text-primary" href="#">
+<span class="material-symbols-outlined">video_library</span>
+<span class="text-xs font-medium">My List</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#A9A9A9] hover:text-primary" href="#">
+<span class="material-symbols-outlined">download</span>
+<span class="text-xs font-medium">Downloads</span>
+</a>
+</div>
+</div>
+</div>
+</body></html>

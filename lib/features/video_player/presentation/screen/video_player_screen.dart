@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +6,7 @@ import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linze/core/models/streaming_models.dart';
+import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
@@ -12,6 +14,9 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String animeTitle;
   final String episodeTitle;
   final String episodeId;
+  final List<Episode>? episodes;
+  final int currentEpisodeIndex;
+  final String animeId;
 
   const VideoPlayerScreen({
     super.key,
@@ -19,6 +24,9 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
     required this.animeTitle,
     required this.episodeTitle,
     required this.episodeId,
+    this.episodes,
+    this.currentEpisodeIndex = 0,
+    this.animeId = '',
   });
 
   @override
@@ -45,6 +53,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   // Skip tracking to prevent loops
   bool _hasSkippedIntro = false;
   bool _hasSkippedOutro = false;
+  
+  // Episode navigation overlay state
+  bool _showNextEpisodeOverlay = false;
+  Timer? _autoPlayTimer;
 
   @override
   void initState() {
@@ -327,6 +339,133 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       if (position.inSeconds % 10 == 0) {
         _savePlaybackPosition();
       }
+    }
+  }
+
+  Future<void> _playNextEpisode() async {
+    if (widget.episodes == null || widget.currentEpisodeIndex >= widget.episodes!.length - 1) {
+      _showEpisodeNavigationMessage('No next episode available');
+      return;
+    }
+
+    final nextEpisode = widget.episodes![widget.currentEpisodeIndex + 1];
+    await _loadAndPlayEpisode(nextEpisode, widget.currentEpisodeIndex + 1);
+  }
+
+  Future<void> _playPreviousEpisode() async {
+    if (widget.episodes == null || widget.currentEpisodeIndex <= 0) {
+      _showEpisodeNavigationMessage('No previous episode available');
+      return;
+    }
+
+    final previousEpisode = widget.episodes![widget.currentEpisodeIndex - 1];
+    await _loadAndPlayEpisode(previousEpisode, widget.currentEpisodeIndex - 1);
+  }
+
+  Future<void> _loadAndPlayEpisode(Episode episode, int episodeIndex) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Dispose current player
+      _videoPlayerController.dispose();
+      _chewieController?.dispose();
+
+      // Get new streaming info
+      final apiService = ref.read(apiServiceProvider);
+      final streamingInfo = await apiService.getStreamingInfo(
+        id: episode.id,
+        server: _selectedServer?.serverName ?? 'HD-2',
+        type: _selectedType,
+      );
+
+      if (streamingInfo.streamingLink?.link?.file != null) {
+        final videoUrl = streamingInfo.streamingLink!.link!.file!;
+        
+        _videoPlayerController = VideoPlayerController.networkUrl(
+          Uri.parse(videoUrl),
+          httpHeaders: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Referer': 'https://rapid-cloud.co/',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+          },
+        );
+
+        await _videoPlayerController.initialize();
+
+        _chewieController = ChewieController(
+          videoPlayerController: _videoPlayerController,
+          autoPlay: true,
+          looping: false,
+          allowFullScreen: true,
+          allowMuting: true,
+          showOptions: true,
+          showControlsOnInitialize: true,
+          materialProgressColors: ChewieProgressColors(
+            playedColor: const Color(0xFF5B13EC),
+            handleColor: const Color(0xFF5B13EC),
+            backgroundColor: const Color(0xFF444444),
+            bufferedColor: const Color(0xFF888888),
+          ),
+          placeholder: Container(
+            color: Colors.black,
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF5B13EC),
+              ),
+            ),
+          ),
+          autoInitialize: true,
+          allowPlaybackSpeedChanging: true,
+          playbackSpeeds: const [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
+        );
+
+        // Setup auto-skip intro/outro
+        _setupAutoSkip();
+        
+        // Add listener to save position periodically
+        _videoPlayerController.addListener(_onPositionChanged);
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Show success message
+        if (mounted) {
+          _showEpisodeNavigationMessage('Playing Episode ${episode.episodeNo}');
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'No video source available for this episode';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load episode: $e';
+        _isLoading = false;
+      });
+      
+      if (mounted) {
+        _showEpisodeNavigationMessage('Failed to load episode: $e');
+      }
+    }
+  }
+
+  void _showEpisodeNavigationMessage(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color(0xFF5B13EC),
+        ),
+      );
     }
   }
 
@@ -792,6 +931,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    _autoPlayTimer?.cancel();
     _videoPlayerController.removeListener(_checkForSkipSegments);
     _videoPlayerController.removeListener(_onPositionChanged);
     // Save final position before disposing
@@ -830,14 +970,27 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    widget.episodeTitle,
-                    style: GoogleFonts.plusJakartaSans(
-                      color: const Color(0xFFA7A7A7),
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.episodeTitle,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFFA7A7A7),
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (widget.episodes != null)
+                        Text(
+                          'Episode ${widget.currentEpisodeIndex + 1} of ${widget.episodes!.length}',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: const Color(0xFF888888),
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 if (_selectedServer != null) ...[
@@ -863,6 +1016,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           ],
         ),
         actions: [
+          // Episode Navigation
+          if (widget.episodes != null) ...[
+            IconButton(
+              icon: Icon(
+                Icons.skip_previous,
+                color: widget.currentEpisodeIndex > 0 ? Colors.white : Colors.grey,
+              ),
+              onPressed: widget.currentEpisodeIndex > 0 ? _playPreviousEpisode : null,
+              tooltip: 'Previous Episode',
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.skip_next,
+                color: widget.episodes != null && widget.currentEpisodeIndex < widget.episodes!.length - 1 
+                    ? Colors.white 
+                    : Colors.grey,
+              ),
+              onPressed: widget.episodes != null && widget.currentEpisodeIndex < widget.episodes!.length - 1 
+                  ? _playNextEpisode 
+                  : null,
+              tooltip: 'Next Episode',
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.tune, color: Colors.white),
             onPressed: () {
@@ -929,20 +1105,27 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   ),
                 )
               : _chewieController != null
-                  ? GestureDetector(
-                      onDoubleTapDown: (details) {
-                        final screenWidth = MediaQuery.of(context).size.width;
-                        final tapPosition = details.globalPosition.dx;
-                        
-                        if (tapPosition < screenWidth / 2) {
-                          // Double tap left side - skip backward 10 seconds
-                          _skipBackward();
-                        } else {
-                          // Double tap right side - skip forward 10 seconds
-                          _skipForward();
-                        }
-                      },
-                      child: Chewie(controller: _chewieController!),
+                  ? Stack(
+                      children: [
+                        GestureDetector(
+                          onDoubleTapDown: (details) {
+                            final screenWidth = MediaQuery.of(context).size.width;
+                            final tapPosition = details.globalPosition.dx;
+                            
+                            if (tapPosition < screenWidth / 2) {
+                              // Double tap left side - skip backward 10 seconds
+                              _skipBackward();
+                            } else {
+                              // Double tap right side - skip forward 10 seconds
+                              _skipForward();
+                            }
+                          },
+                          child: Chewie(controller: _chewieController!),
+                        ),
+                        // Episode Navigation Overlay
+                        if (widget.episodes != null)
+                          _buildEpisodeNavigationOverlay(),
+                      ],
                     )
                   : const Center(
                       child: Text(
@@ -950,6 +1133,206 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
+    );
+  }
+
+  Widget _buildEpisodeNavigationOverlay() {
+    return ValueListenableBuilder<VideoPlayerValue>(
+      valueListenable: _videoPlayerController,
+      builder: (context, value, child) {
+        if (!value.isInitialized) {
+          return const SizedBox.shrink();
+        }
+
+        final position = value.position;
+        final duration = value.duration;
+        final remainingTime = duration - position;
+        
+        // Show overlay when there's less than 30 seconds remaining
+        if (remainingTime.inSeconds > 30) {
+          // Hide overlay if not in the last 30 seconds
+          if (_showNextEpisodeOverlay) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              setState(() {
+                _showNextEpisodeOverlay = false;
+              });
+            });
+          }
+          return const SizedBox.shrink();
+        }
+
+        final countdown = remainingTime.inSeconds;
+
+        // Show overlay when in the last 30 seconds
+        if (!_showNextEpisodeOverlay) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _showNextEpisodeOverlay = true;
+            });
+          });
+        }
+
+        // Set up auto-play timer if there's a next episode
+        if (widget.currentEpisodeIndex < widget.episodes!.length - 1 && 
+            countdown > 0 && countdown <= 30) {
+          _autoPlayTimer?.cancel();
+          _autoPlayTimer = Timer(Duration(seconds: countdown), () {
+            if (mounted && _showNextEpisodeOverlay) {
+              _playNextEpisode();
+            }
+          });
+        }
+
+        return Positioned(
+          bottom: 80,
+          right: 16,
+          child: AnimatedOpacity(
+            opacity: _showNextEpisodeOverlay ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF5B13EC), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.play_circle_outline,
+                        color: const Color(0xFF5B13EC),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Next Episode',
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (widget.currentEpisodeIndex < widget.episodes!.length - 1) ...[
+                    Text(
+                      'Episode ${widget.episodes![widget.currentEpisodeIndex + 1].episodeNo}',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: const Color(0xFF5B13EC),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.episodes![widget.currentEpisodeIndex + 1].title ?? 
+                      'Episode ${widget.episodes![widget.currentEpisodeIndex + 1].episodeNo}',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    // Countdown timer
+                    if (countdown > 0 && countdown <= 30)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF5B13EC).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Auto-play in ${countdown}s',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: const Color(0xFF5B13EC),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            _autoPlayTimer?.cancel();
+                            _playNextEpisode();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF5B13EC),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.play_arrow, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Play Now',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () {
+                            _autoPlayTimer?.cancel();
+                            setState(() {
+                              _showNextEpisodeOverlay = false;
+                            });
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    Text(
+                      'No More Episodes',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -16,7 +16,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
-  Future<void> _playEpisode(Episode episode) async {
+  Future<void> _playEpisode(Episode episode, int episodeIndex, List<Episode> episodes) async {
     try {
       final apiService = ref.read(apiServiceProvider);
       final streamingInfo = await apiService.getStreamingInfo(
@@ -36,6 +36,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
               animeTitle: widget.anime.title,
               episodeTitle: episode.title ?? 'Episode ${episode.episodeNo}',
               episodeId: episode.id,
+              episodes: episodes,
+              currentEpisodeIndex: episodeIndex,
+              animeId: widget.anime.id,
             ),
           ),
         );
@@ -195,7 +198,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                                     onPressed: () {
                                       // Play first episode if available
                                       if (episodes.hasValue && episodes.value?.episodes?.isNotEmpty == true) {
-                                        _playEpisode(episodes.value!.episodes!.first);
+                                        final episodesList = episodes.value!.episodes!;
+                                        _playEpisode(episodesList.first, 0, episodesList);
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -379,7 +383,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                                     ),
                                   ),
                                   IconButton(
-                                    onPressed: () => _playEpisode(episode),
+                                    onPressed: () => _playEpisode(episode, index, episodesList),
                                     icon: Icon(
                                       Icons.play_circle,
                                       color: Colors.white,

@@ -306,6 +306,8 @@ class Episode {
   final String? title;
   final String? japaneseTitle;
   final bool? filler;
+  final String? thumbnail;
+  final String? poster;
 
   Episode({
     required this.episodeNo,
@@ -313,6 +315,8 @@ class Episode {
     this.title,
     this.japaneseTitle,
     this.filler,
+    this.thumbnail,
+    this.poster,
   });
 
   factory Episode.fromJson(Map<String, dynamic> json) {
@@ -322,6 +326,8 @@ class Episode {
       title: json['title'],
       japaneseTitle: json['japanese_title'],
       filler: json['filler'],
+      thumbnail: json['thumbnail'],
+      poster: json['poster'],
     );
   }
 
@@ -332,6 +338,8 @@ class Episode {
       'title': title,
       'japanese_title': japaneseTitle,
       'filler': filler,
+      'thumbnail': thumbnail,
+      'poster': poster,
     };
   }
 }

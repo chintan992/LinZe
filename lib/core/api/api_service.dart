@@ -485,4 +485,24 @@ class ApiService {
       throw Exception('Failed to load voice actor details');
     }
   }
+
+  // Episode thumbnails endpoint (if supported by the API)
+  Future<Map<String, String>> getEpisodeThumbnails(String animeId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/episodes/$animeId/thumbnails'),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return Map<String, String>.from(json['results'] ?? {});
+      } else {
+        // If the endpoint doesn't exist, return empty map
+        return {};
+      }
+    } catch (e) {
+      // If there's an error, return empty map
+      return {};
+    }
+  }
 }

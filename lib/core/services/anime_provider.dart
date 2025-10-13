@@ -90,3 +90,8 @@ final nextEpisodeScheduleProvider = FutureProvider.family<NextEpisodeSchedule, S
   final apiService = ref.read(apiServiceProvider);
   return await apiService.getNextEpisodeSchedule(animeId);
 });
+
+final episodeThumbnailsProvider = FutureProvider.family<Map<String, String>, String>((ref, animeId) async {
+  final apiService = ref.read(apiServiceProvider);
+  return await apiService.getEpisodeThumbnails(animeId);
+});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:linze/core/services/first_time_service.dart';
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginSignupScreen extends StatefulWidget {
   const LoginSignupScreen({super.key});
@@ -37,8 +37,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
+      await FirstTimeService.setLoggedIn(true);
       
       // Navigate to main screen
       if (!mounted) return;

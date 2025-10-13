@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:linze/core/services/first_time_service.dart';
+import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart';
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
 import 'package:linze/features/welcome/welcome_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
   
-  runApp(ProviderScope(
-    child: AnimeStreamingApp(isLoggedIn: isLoggedIn),
+  runApp(const ProviderScope(
+    child: AnimeStreamingApp(),
   ));
 }
 
 class AnimeStreamingApp extends StatelessWidget {
-  final bool isLoggedIn;
-
-  const AnimeStreamingApp({super.key, required this.isLoggedIn});
+  const AnimeStreamingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +32,59 @@ class AnimeStreamingApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      home: isLoggedIn ? const MainScreen() : const WelcomeScreen(),
+      home: const AppInitializer(),
+    );
+  }
+}
+
+class AppInitializer extends StatefulWidget {
+  const AppInitializer({super.key});
+
+  @override
+  State<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    final isLoggedIn = await FirstTimeService.isLoggedIn();
+    final isFirstTime = await FirstTimeService.isFirstTimeUser();
+
+    if (mounted) {
+      if (isLoggedIn) {
+        // User is logged in, go to main screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      } else if (isFirstTime) {
+        // First time user, show welcome screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        );
+      } else {
+        // Returning user but not logged in, go to login/signup
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const LoginSignupScreen(),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF5B13EC),
+        ),
+      ),
     );
   }
 }

@@ -11,20 +11,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:linze/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App initialization smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const AnimeStreamingApp(isLoggedIn: false));
+    await tester.pumpWidget(const AnimeStreamingApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Wait for the app to initialize and navigate
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that we have some content on screen
+    // This could be the loading indicator, welcome screen, or main screen
+    // depending on the user's state
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

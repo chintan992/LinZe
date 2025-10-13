@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:linze/features/welcome/welcome_screen.dart';
+import 'package:linze/core/services/first_time_service.dart';
+import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart';
 import 'package:linze/core/providers/user_preferences_provider.dart';
 import 'package:linze/core/services/user_preferences_service.dart';
 
@@ -16,13 +16,13 @@ class ProfileSettingsScreen extends ConsumerStatefulWidget {
 
 class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false);
+    // Set user as logged out but keep welcome screen as seen
+    await FirstTimeService.setLoggedIn(false);
     
-    // Navigate back to welcome screen
+    // Navigate back to login screen (not welcome screen for returning users)
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+      MaterialPageRoute(builder: (context) => const LoginSignupScreen()),
       (route) => false,
     );
   }

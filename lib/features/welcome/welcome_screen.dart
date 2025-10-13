@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:linze/core/services/first_time_service.dart';
 import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart';
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,14 +93,17 @@ class WelcomeScreen extends StatelessWidget {
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Navigate to sign up
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginSignupScreen(),
-                                ),
-                              );
+                            onPressed: () async {
+                              // Mark welcome as seen and navigate to sign up
+                              await FirstTimeService.markWelcomeAsSeen();
+                              if (mounted) {
+                                Navigator.push(
+                                  this.context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginSignupScreen(),
+                                  ),
+                                );
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF5B13EC),
@@ -119,14 +128,17 @@ class WelcomeScreen extends StatelessWidget {
                           width: double.infinity,
                           height: 48,
                           child: OutlinedButton(
-                            onPressed: () {
-                              // Navigate to login
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginSignupScreen(),
-                                ),
-                              );
+                            onPressed: () async {
+                              // Mark welcome as seen and navigate to login
+                              await FirstTimeService.markWelcomeAsSeen();
+                              if (mounted) {
+                                Navigator.push(
+                                  this.context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginSignupScreen(),
+                                  ),
+                                );
+                              }
                             },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
@@ -184,7 +196,11 @@ class WelcomeScreen extends StatelessWidget {
                               child: SizedBox(
                                 height: 48,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    // Mark welcome as seen and handle Google sign in
+                                    await FirstTimeService.markWelcomeAsSeen();
+                                    // TODO: Implement Google sign in
+                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2F2348),
                                     foregroundColor: Colors.white,
@@ -220,7 +236,11 @@ class WelcomeScreen extends StatelessWidget {
                               child: SizedBox(
                                 height: 48,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    // Mark welcome as seen and handle GitHub sign in
+                                    await FirstTimeService.markWelcomeAsSeen();
+                                    // TODO: Implement GitHub sign in
+                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2F2348),
                                     foregroundColor: Colors.white,
@@ -254,14 +274,18 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         TextButton(
-                          onPressed: () {
-                            // Navigate to home screen directly
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MainScreen(),
-                              ),
-                            );
+                          onPressed: () async {
+                            // Mark welcome as seen and set as logged in (guest mode)
+                            await FirstTimeService.markWelcomeAsSeen();
+                            await FirstTimeService.setLoggedIn(true);
+                            if (mounted) {
+                              Navigator.pushReplacement(
+                                this.context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MainScreen(),
+                                ),
+                              );
+                            }
                           },
                           child: Text(
                             'Skip for now',

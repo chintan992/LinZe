@@ -9,6 +9,7 @@ import 'package:linze/core/models/streaming_models.dart';
 import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
 import 'package:linze/core/providers/user_preferences_provider.dart';
+import 'package:linze/core/providers/watch_progress_provider.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final StreamingLink streamingLink;
@@ -54,6 +55,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   // Skip tracking to prevent loops
   bool _hasSkippedIntro = false;
   bool _hasSkippedOutro = false;
+  
+  // Watch progress tracking
+  Timer? _progressTimer;
+  Duration _lastSavedPosition = Duration.zero;
   
   // Episode navigation overlay state
   bool _showNextEpisodeOverlay = false;
@@ -161,6 +166,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         // Setup auto-skip intro/outro
         _setupAutoSkip();
+        
+        // Setup watch progress tracking
+        _setupWatchProgressTracking();
         
         // Restore playback position
         _restorePlaybackPosition();
@@ -949,10 +957,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   void dispose() {
     _autoPlayTimer?.cancel();
+    _progressTimer?.cancel();
     _videoPlayerController.removeListener(_checkForSkipSegments);
     _videoPlayerController.removeListener(_onPositionChanged);
     // Save final position before disposing
     _savePlaybackPosition();
+    _saveFinalProgress();
     _videoPlayerController.dispose();
     _chewieController?.dispose();
     super.dispose();
@@ -1350,6 +1360,57 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           ),
         );
       },
+    );
+  }
+
+
+  void _setupWatchProgressTracking() {
+    // Start a timer to save progress every 10 seconds
+    _progressTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (_videoPlayerController.value.isInitialized) {
+        _saveWatchProgress();
+      }
+    });
+  }
+
+  void _saveWatchProgress() {
+    if (!_videoPlayerController.value.isInitialized) return;
+    
+    final currentPosition = _videoPlayerController.value.position;
+    final duration = _videoPlayerController.value.duration;
+    
+    // Only save if position has changed significantly (more than 5 seconds)
+    if ((currentPosition - _lastSavedPosition).inSeconds.abs() >= 5) {
+      final progressNotifier = ref.read(watchProgressNotifierProvider.notifier);
+      
+      progressNotifier.updateProgressFromVideo(
+        animeId: widget.animeId,
+        episodeId: widget.episodeId,
+        currentPosition: currentPosition,
+        episodeDuration: duration,
+        markAsCompleted: currentPosition.inSeconds >= duration.inSeconds * 0.9,
+      );
+      
+      _lastSavedPosition = currentPosition;
+    }
+  }
+
+  void _saveFinalProgress() {
+    if (!_videoPlayerController.value.isInitialized) return;
+    
+    final currentPosition = _videoPlayerController.value.position;
+    final duration = _videoPlayerController.value.duration;
+    final progressNotifier = ref.read(watchProgressNotifierProvider.notifier);
+    
+    // Mark as completed if watched more than 90%
+    final isCompleted = currentPosition.inSeconds >= duration.inSeconds * 0.9;
+    
+    progressNotifier.updateProgressFromVideo(
+      animeId: widget.animeId,
+      episodeId: widget.episodeId,
+      currentPosition: currentPosition,
+      episodeDuration: duration,
+      markAsCompleted: isCompleted,
     );
   }
 }

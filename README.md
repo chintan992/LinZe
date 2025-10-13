@@ -56,7 +56,7 @@ lib/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/linze.git
+   git clone https://github.com/chintan992/linze.git
    cd linze
    ```
 
@@ -167,4 +167,4 @@ For support, email your-email@example.com or create an issue in the repository.
 
 ---
 
-**Made with ❤️ by [Your Name](https://github.com/your-username)**
+**Made with ❤️ by [Chintan Rathod](https://github.com/chintan992)**

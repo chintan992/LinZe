@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
+import 'package:linze/core/widgets/anime_card.dart';
 import 'package:linze/features/anime_detail/presentation/screen/anime_detail_screen.dart';
 import 'package:linze/features/search_discovery/presentation/screen/search_discovery_screen.dart';
 
@@ -79,130 +79,74 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildHeroBanner(dynamic spotlight) {
-    return Container(
+  Widget _buildHeroCarousel(List spotlights) {
+    return SizedBox(
       height: 280,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: CachedNetworkImageProvider(spotlight.poster),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-                        Colors.black.withValues(alpha: 0.3),
-              Colors.black.withValues(alpha: 0.8),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5B13EC),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'FEATURED',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+      child: PageView.builder(
+        controller: PageController(viewportFraction: 0.85),
+        itemCount: spotlights.length,
+        itemBuilder: (context, index) {
+          final spotlight = spotlights[index];
+          return AnimeCard(
+            anime: _convertSpotlightToAnime(spotlight),
+            type: AnimeCardType.hero,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AnimeDetailScreen(
+                    anime: _convertSpotlightToAnime(spotlight),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                spotlight.title,
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                spotlight.description ?? '',
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  height: 1.4,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.play_arrow,
-                          color: const Color(0xFF5B13EC),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Watch Now',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: const Color(0xFF5B13EC),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                    ),
-                    child: Icon(
-                      Icons.add,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+              );
+            },
+            onAddToList: () {
+              // TODO: Implement add to list functionality
+            },
+          );
+        },
       ),
     );
   }
 
   Widget _buildAnimeCard(dynamic anime, {String? badge, bool isTrending = false}) {
-    return GestureDetector(
+    AnimeCardBadge? cardBadge;
+    int? trendingRank;
+    
+    // Convert string badge to enum
+    switch (badge?.toLowerCase()) {
+      case 'new':
+        cardBadge = AnimeCardBadge.new_;
+        break;
+      case 'dub':
+        cardBadge = AnimeCardBadge.dub;
+        break;
+      case 'airing':
+        cardBadge = AnimeCardBadge.airing;
+        break;
+      case 'popular':
+        cardBadge = AnimeCardBadge.popular;
+        break;
+      case 'favorite':
+        cardBadge = AnimeCardBadge.favorite;
+        break;
+      case 'completed':
+        cardBadge = AnimeCardBadge.completed;
+        break;
+    }
+    
+    // Get trending rank if it's a trending item
+    if (isTrending && anime.number != null) {
+      trendingRank = anime.number;
+    }
+    
+    return AnimeCard(
+      anime: isTrending 
+        ? _convertTrendingToAnime(anime)
+        : _convertLatestEpisodeToAnime(anime),
+      type: AnimeCardType.standard,
+      badge: cardBadge,
+      trendingRank: trendingRank,
       onTap: () {
         Navigator.push(
           context,
@@ -215,117 +159,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         );
       },
-      child: Container(
-        width: 140,
-        margin: const EdgeInsets.only(right: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: CachedNetworkImage(
-                      imageUrl: anime.poster,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey[800],
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF5B13EC),
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[800],
-                        child: const Icon(
-                          Icons.error,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (badge != null)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: badge == 'New' ? const Color(0xFF5B13EC) : Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          badge,
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (isTrending)
-                    Positioned(
-                      bottom: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.trending_up,
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '${(anime as dynamic).number ?? '1'}',
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              anime.title,
-              style: GoogleFonts.plusJakartaSans(
-                color: const Color(0xFFEAEAEA),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              isTrending ? 'Trending' : 'New Episode',
-              style: GoogleFonts.plusJakartaSans(
-                color: const Color(0xFFA9A9A9),
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -400,101 +233,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildQuickAccessGrid() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Access',
-            style: GoogleFonts.plusJakartaSans(
-              color: const Color(0xFFEAEAEA),
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickAccessCard(
-                  'Continue Watching',
-                  Icons.history,
-                  const Color(0xFF5B13EC),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickAccessCard(
-                  'My List',
-                  Icons.bookmark,
-                  Colors.orange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickAccessCard(
-                  'Simulcast',
-                  Icons.live_tv,
-                  Colors.red,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickAccessCard(
-                  'Browse',
-                  Icons.explore,
-                  Colors.green,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickAccessCard(String title, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1F1F1F),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: GoogleFonts.plusJakartaSans(
-              color: const Color(0xFFEAEAEA),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
   
   @override
   Widget build(BuildContext context) {
@@ -593,28 +331,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   
-                  // Hero Banner
+                  // Hero Carousel
                   if (spotlights.isNotEmpty)
                     SliverToBoxAdapter(
-                      child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                              builder: (context) => AnimeDetailScreen(
-                                anime: _convertSpotlightToAnime(spotlights[0]),
-                                      ),
-                                    ),
-                                  );
-                                },
-                        child: _buildHeroBanner(spotlights[0]),
-                      ),
+                      child: _buildHeroCarousel(spotlights),
                     ),
-                  
-                  // Quick Access
-                    SliverToBoxAdapter(
-                    child: _buildQuickAccessGrid(),
-                  ),
                   
                   // Trending Section
                   if (trending.isNotEmpty)

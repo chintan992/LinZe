@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:linze/core/services/anime_provider.dart';
+import 'package:linze/core/widgets/anime_card.dart';
 import 'package:linze/features/anime_detail/presentation/screen/anime_detail_screen.dart';
 import 'package:linze/features/profile_settings/presentation/screen/profile_settings_screen.dart';
 
@@ -191,7 +191,9 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final anime = results[index];
-                            return GestureDetector(
+                            return AnimeCard(
+                              anime: anime,
+                              type: AnimeCardType.horizontal,
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -200,67 +202,6 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                                   ),
                                 );
                               },
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: CachedNetworkImage(
-                                        imageUrl: anime.poster,
-                                        width: 80,
-                                        height: 120,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) => Container(
-                                          width: 80,
-                                          height: 120,
-                                          color: Colors.grey[800],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            anime.title,
-                                            style: GoogleFonts.plusJakartaSans(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (anime.japaneseTitle.isNotEmpty)
-                                            Text(
-                                              anime.japaneseTitle,
-                                              style: GoogleFonts.plusJakartaSans(
-                                                color: const Color(0xFF8E8E93),
-                                                fontSize: 14,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            anime.tvInfo?.showType ?? 'TV',
-                                            style: GoogleFonts.plusJakartaSans(
-                                              color: const Color(0xFF007AFF),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             );
                           },
                           childCount: results.length,
@@ -390,7 +331,10 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                           itemCount: trending!.length,
                           itemBuilder: (context, index) {
                             final anime = trending[index];
-                            return GestureDetector(
+                            return AnimeCard(
+                              anime: anime,
+                              type: AnimeCardType.trending,
+                              trendingRank: index + 1,
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -399,47 +343,6 @@ class _SearchDiscoveryScreenState extends State<SearchDiscoveryScreen> {
                                   ),
                                 );
                               },
-                              child: Container(
-                                width: 160,
-                                margin: const EdgeInsets.only(left: 16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: CachedNetworkImage(
-                                          imageUrl: anime.poster,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          placeholder: (context, url) => Container(
-                                            color: Colors.grey[800],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      anime.title,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      anime.tvInfo?.showType ?? 'TV',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        color: const Color(0xFF8E8E93),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             );
                           },
                         );

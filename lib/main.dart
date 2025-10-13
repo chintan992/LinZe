@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:linze/core/services/first_time_service.dart';
 import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart';
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
@@ -7,6 +8,9 @@ import 'package:linze/features/welcome/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
   
   runApp(const ProviderScope(
     child: AnimeStreamingApp(),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:linze/core/models/home.dart' as home_models;
 import 'package:linze/core/models/anime_model.dart';
@@ -7,7 +8,7 @@ import 'package:linze/core/models/streaming_models.dart';
 import 'package:linze/core/models/response_models.dart' as response_models;
 
 class ApiService {
-  final String baseUrl = 'https://anime-api-test-one.vercel.app';
+  String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'https://anime-api-test-one.vercel.app';
 
   // Home endpoint
   Future<home_models.Home> getHomeData() async {

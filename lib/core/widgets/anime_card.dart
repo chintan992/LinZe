@@ -8,6 +8,8 @@ enum AnimeCardType {
   standard,  // Standard vertical card (140x220)
   horizontal, // Horizontal search result card
   trending,  // Trending card with ranking
+  continueWatching, // Continue watching card with progress
+  newRelease, // New release card with date
 }
 
 enum AnimeCardBadge {
@@ -27,6 +29,8 @@ class AnimeCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onAddToList;
   final double? progress; // For continue watching (0.0 to 1.0)
+  final String? releaseDate; // For new release cards
+  final String? currentEpisode; // For continue watching cards
 
   const AnimeCard({
     super.key,
@@ -37,6 +41,8 @@ class AnimeCard extends StatelessWidget {
     this.onTap,
     this.onAddToList,
     this.progress,
+    this.releaseDate,
+    this.currentEpisode,
   });
 
   @override
@@ -50,6 +56,10 @@ class AnimeCard extends StatelessWidget {
         return _buildHorizontalCard();
       case AnimeCardType.trending:
         return _buildTrendingCard();
+      case AnimeCardType.continueWatching:
+        return _buildContinueWatchingCard();
+      case AnimeCardType.newRelease:
+        return _buildNewReleaseCard();
     }
   }
 
@@ -195,7 +205,7 @@ class AnimeCard extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: CachedNetworkImage(
-                      imageUrl: anime.poster,
+                      imageUrl: anime.poster.isNotEmpty ? anime.poster : 'https://via.placeholder.com/300x400/1F1F1F/EAEAEA?text=No+Image',
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -471,7 +481,7 @@ class AnimeCard extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: CachedNetworkImage(
-                      imageUrl: anime.poster,
+                      imageUrl: anime.poster.isNotEmpty ? anime.poster : 'https://via.placeholder.com/300x400/1F1F1F/EAEAEA?text=No+Image',
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -581,5 +591,250 @@ class AnimeCard extends StatelessWidget {
     if (badge == AnimeCardBadge.new_) return 'New Episode';
     if (anime.tvInfo?.showType != null) return anime.tvInfo!.showType!;
     return '';
+  }
+
+  Widget _buildContinueWatchingCard() {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.only(right: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image with Progress Bar
+            Expanded(
+              child: Stack(
+                children: [
+                  // Anime Poster
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: anime.poster.isNotEmpty ? anime.poster : 'https://via.placeholder.com/300x400/1F1F1F/EAEAEA?text=No+Image',
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[800],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF5B13EC),
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.error,
+                          color: Colors.white54,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Progress Bar Overlay
+                  if (progress != null)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800],
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(12),
+                            bottomRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF5B13EC),
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(12),
+                                bottomRight: Radius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Title
+            Text(
+              anime.title,
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFFEAEAEA),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            
+            const SizedBox(height: 6),
+            
+            // Episode Info
+            if (currentEpisode != null)
+              Text(
+                currentEpisode!,
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFFA9A9A9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            
+            if (progress != null) ...[
+              const SizedBox(height: 4),
+              
+              // Progress Percentage
+              Text(
+                '${(progress! * 100).round()}% watched',
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFF5B13EC),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewReleaseCard() {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 16),
+        width: 160,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image with NEW Badge
+            Expanded(
+              child: Stack(
+                children: [
+                  // Anime Poster
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: anime.poster.isNotEmpty ? anime.poster : 'https://via.placeholder.com/300x400/1F1F1F/EAEAEA?text=No+Image',
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[800],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF5B13EC),
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.error,
+                          color: Colors.white54,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // NEW Badge
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5B13EC),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'NEW',
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Title
+            Text(
+              anime.title,
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFFEAEAEA),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            
+            const SizedBox(height: 4),
+            
+            // Release Date
+            if (releaseDate != null)
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    color: const Color(0xFF5B13EC),
+                    size: 12,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    releaseDate!,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFF5B13EC),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            
+            const SizedBox(height: 4),
+            
+            // Episode Info
+            if (anime.tvInfo?.eps != null)
+              Text(
+                '${anime.tvInfo!.eps} episodes',
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFFA9A9A9),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

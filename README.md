@@ -1,4 +1,4 @@
-# Linze 🎌
+# Linze
 
 **A Modern Anime Streaming Application built with Flutter**
 

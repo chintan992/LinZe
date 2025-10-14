@@ -5,6 +5,7 @@ import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
 import 'package:linze/core/providers/user_preferences_provider.dart';
 import 'package:linze/core/providers/watch_progress_provider.dart';
+import 'package:linze/core/providers/watchlist_provider.dart';
 import 'package:linze/core/models/watch_progress.dart';
 import 'package:linze/features/video_player/presentation/screen/video_player_screen.dart';
 import 'package:linze/features/anime_detail/presentation/widgets/anime_hero_banner.dart';
@@ -23,7 +24,6 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
 
 class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   bool _isFavorite = false;
-  bool _isInWatchlist = false;
   double _scrollOffset = 0.0;
   
   
@@ -85,6 +85,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           final animeDetail = ref.watch(animeDetailProvider(widget.anime.id));
           final episodes = ref.watch(episodesProvider(widget.anime.id));
           final characters = ref.watch(characterListProvider(widget.anime.id));
+          final isInWatchlist = ref.watch(isAnimeInWatchlistProvider(widget.anime.id));
           
           // Load watch progress for this anime
           ref.read(watchProgressNotifierProvider.notifier).loadAnimeProgress(widget.anime.id);
@@ -111,11 +112,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                           anime: anime,
                           scrollOffset: _scrollOffset,
                           onPlayPressed: () => _playFirstEpisode(episodes),
-                          onAddToListPressed: () {
-                            setState(() {
-                              _isInWatchlist = !_isInWatchlist;
-                            });
-                          },
+                          onAddToListPressed: () => _toggleWatchlist(anime),
                           onSharePressed: () => _shareAnime(anime),
                         ),
                       ),
@@ -132,13 +129,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                       SliverToBoxAdapter(
                         child: ActionButtonsSection(
                           onPlayPressed: () => _playFirstEpisode(episodes),
-                          onAddToListPressed: () {
-                            setState(() {
-                              _isInWatchlist = !_isInWatchlist;
-                            });
-                          },
+                          onAddToListPressed: () => _toggleWatchlist(anime),
                           onSharePressed: () => _shareAnime(anime),
-                          isInWatchlist: _isInWatchlist,
+                          isInWatchlist: isInWatchlist.value ?? false,
                           isFavorite: _isFavorite,
                           continueFromEpisode: _getContinueFromEpisode(episodes),
                         ),
@@ -264,23 +257,24 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _isInWatchlist = !_isInWatchlist;
-                    });
-                  },
-                  icon: Icon(
-                    _isInWatchlist ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                    color: _isInWatchlist ? const Color(0xFF5B13EC) : Colors.white,
-                    size: 24,
-                  ),
-                ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final isInWatchlist = ref.watch(isAnimeInWatchlistProvider(widget.anime.id));
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      onPressed: () => _toggleWatchlist(widget.anime),
+                      icon: Icon(
+                        (isInWatchlist.value ?? false) ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                        color: (isInWatchlist.value ?? false) ? const Color(0xFF5B13EC) : Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -315,6 +309,29 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     }
   }
 
+  void _toggleWatchlist(Anime anime) {
+    final watchlistNotifier = ref.read(watchlistNotifierProvider.notifier);
+    final isCurrentlyInWatchlist = ref.read(isAnimeInWatchlistProvider(anime.id)).value ?? false;
+    
+    watchlistNotifier.toggleWatchlist(anime);
+    
+    final message = isCurrentlyInWatchlist 
+        ? 'Removed from watchlist' 
+        : 'Added to watchlist';
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF5B13EC),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
   void _shareAnime(Anime anime) {
     // TODO: Implement share functionality
     ScaffoldMessenger.of(context).showSnackBar(
@@ -324,4 +341,5 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       ),
     );
   }
+
 }

@@ -1,4 +1,4 @@
-import 'package:linze/core/models/anime_model.dart';
+import 'package:linze/core/models/anime_model.dart' show Anime, Season;
 
 class StreamingLink {
   final int? id;
@@ -718,5 +718,75 @@ class VoiceActorDetail {
       'about': about?.toJson(),
       'roles': roles?.map((e) => e.toJson()).toList(),
     };
+  }
+}
+
+// Response models for streaming API
+class StreamingResponse {
+  final List<StreamingLink> streamingLinks;
+  final List<Server> servers;
+
+  const StreamingResponse({
+    required this.streamingLinks,
+    required this.servers,
+  });
+
+  factory StreamingResponse.fromJson(Map<String, dynamic> json) {
+    return StreamingResponse(
+      streamingLinks: (json['streamingLink'] as List<dynamic>? ?? [])
+          .map((item) => StreamingLink.fromJson(item))
+          .toList(),
+      servers: (json['servers'] as List<dynamic>? ?? [])
+          .map((item) => Server.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+class StreamingEpisodesResponse {
+  final int totalEpisodes;
+  final List<StreamingEpisode> episodes;
+
+  const StreamingEpisodesResponse({
+    required this.totalEpisodes,
+    required this.episodes,
+  });
+
+  factory StreamingEpisodesResponse.fromJson(Map<String, dynamic> json) {
+    return StreamingEpisodesResponse(
+      totalEpisodes: json['totalEpisodes'] as int? ?? 0,
+      episodes: (json['episodes'] as List<dynamic>? ?? [])
+          .map((item) => StreamingEpisode.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+class StreamingEpisode {
+  final int episodeNo;
+  final String id;
+  final int dataId;
+  final String jname;
+  final String title;
+  final String japaneseTitle;
+
+  const StreamingEpisode({
+    required this.episodeNo,
+    required this.id,
+    required this.dataId,
+    required this.jname,
+    required this.title,
+    required this.japaneseTitle,
+  });
+
+  factory StreamingEpisode.fromJson(Map<String, dynamic> json) {
+    return StreamingEpisode(
+      episodeNo: json['episode_no'] as int? ?? 0,
+      id: json['id'] as String? ?? '',
+      dataId: json['data_id'] as int? ?? 0,
+      jname: json['jname'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      japaneseTitle: json['japanese_title'] as String? ?? '',
+    );
   }
 }

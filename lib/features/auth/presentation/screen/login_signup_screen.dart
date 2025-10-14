@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:linze/core/services/first_time_service.dart';
+import 'package:linze/core/providers/anilist_auth_provider.dart';
+import 'package:linze/core/api/anilist_api_service.dart';
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
 
-class LoginSignupScreen extends StatefulWidget {
+class LoginSignupScreen extends ConsumerStatefulWidget {
   const LoginSignupScreen({super.key});
 
   @override
-  State<LoginSignupScreen> createState() => _LoginSignupScreenState();
+  ConsumerState<LoginSignupScreen> createState() => _LoginSignupScreenState();
 }
 
-class _LoginSignupScreenState extends State<LoginSignupScreen>
+class _LoginSignupScreenState extends ConsumerState<LoginSignupScreen>
     with TickerProviderStateMixin {
   bool isLogin = true;
   final _formKey = GlobalKey<FormState>();
@@ -48,6 +51,125 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
         ),
       );
     }
+  }
+
+  void _loginWithAniList() async {
+    try {
+      final authService = ref.read(anilistAuthServiceProvider);
+      await authService.startOAuthFlow();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('AniList login failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+        debugPrint('AniList login error: $e');
+      }
+    }
+  }
+
+  void _testAniListMetadata() async {
+    try {
+      final authService = ref.read(anilistAuthServiceProvider);
+      
+      if (!authService.isLoggedIn) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please login to AniList first'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Show loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Testing AniList metadata fetch...'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+
+      // Test fetching anime metadata
+      final apiService = AniListApiService(accessToken: authService.currentTokens?.accessToken);
+      
+      // Test 1: Search for a popular anime
+      debugPrint('Testing AniList search...');
+      final searchResults = await apiService.searchMedia('Attack on Titan', perPage: 5);
+      debugPrint('Search results: ${searchResults.length} anime found');
+      
+      if (searchResults.isNotEmpty) {
+        final firstAnime = searchResults.first;
+        debugPrint('First result: ${firstAnime.title?.english ?? firstAnime.title?.romaji}');
+        debugPrint('Anime ID: ${firstAnime.id}');
+        debugPrint('Episodes: ${firstAnime.episodes}');
+        debugPrint('Status: ${firstAnime.status}');
+        debugPrint('Genres: ${firstAnime.genres}');
+        
+        // Test 2: Get detailed info for the first anime
+        debugPrint('Testing detailed anime fetch...');
+        final detailedAnime = await apiService.getMedia(firstAnime.id, authService.currentTokens?.accessToken);
+        debugPrint('Detailed anime: ${detailedAnime.title?.english ?? detailedAnime.title?.romaji}');
+        debugPrint('Description: ${detailedAnime.description?.substring(0, 100)}...');
+        
+        // Test 3: Get trending anime
+        debugPrint('Testing trending anime fetch...');
+        final trendingAnime = await apiService.getTrendingMedia(perPage: 3);
+        debugPrint('Trending anime: ${trendingAnime.length} found');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ AniList metadata test successful!\nFound ${searchResults.length} anime, ${trendingAnime.length} trending'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ No anime found in search results'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+      
+    } catch (e) {
+      debugPrint('AniList metadata test error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ AniList metadata test failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Listen for AniList authentication success
+    ref.listenManual(anilistLoginStatusProvider, (previous, next) {
+      if (next && mounted) {
+        // AniList login successful, navigate to main screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MainScreen(),
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -308,44 +430,104 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SizedBox(
-                                    width: 56,
-                                    height: 56,
-                                    child: ElevatedButton(
-                                      onPressed: () {},
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF2F2348),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(28),
+                                  Column(
+                                    children: [
+                                      SizedBox(
+                                        width: 56,
+                                        height: 56,
+                                        child: ElevatedButton(
+                                          onPressed: _loginWithAniList,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF2F2348),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(28),
+                                            ),
+                                          ),
+                                          child: Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF02A9FF),
+                                              borderRadius: BorderRadius.all(Radius.circular(4)),
+                                            ),
+                                            child: const Center(
+                                              child: Text(
+                                                'A',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                      child: Image.network(
-                                        'https://www.google.com/favicon.ico',
-                                        width: 24,
-                                        height: 24,
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'AniList',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          color: const Color(0xFFA492C9),
+                                          fontSize: 10,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 16),
-                                  SizedBox(
-                                    width: 56,
-                                    height: 56,
-                                    child: ElevatedButton(
-                                      onPressed: () {},
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF2F2348),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(28),
+                                  const SizedBox(width: 32),
+                                  Column(
+                                    children: [
+                                      SizedBox(
+                                        width: 56,
+                                        height: 56,
+                                        child: ElevatedButton(
+                                          onPressed: _login,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF2F2348),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(28),
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.person_outline,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
                                         ),
                                       ),
-                                      child: Icon(
-                                        Icons.facebook,
-                                        color: Colors.white,
-                                        size: 24,
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Guest',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          color: const Color(0xFFA492C9),
+                                          fontSize: 10,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 16),
+                              // Test AniList Metadata Button
+                              SizedBox(
+                                width: double.infinity,
+                                height: 40,
+                                child: ElevatedButton(
+                                  onPressed: _testAniListMetadata,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF02A9FF),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '🧪 Test AniList Metadata',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 24),
                               Text(

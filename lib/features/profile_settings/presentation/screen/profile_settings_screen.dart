@@ -6,25 +6,98 @@ import 'package:linze/core/services/first_time_service.dart';
 import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart';
 import 'package:linze/core/providers/user_preferences_provider.dart';
 import 'package:linze/core/services/user_preferences_service.dart';
+import 'package:linze/core/providers/anilist_auth_provider.dart';
+import 'package:linze/core/providers/anilist_data_providers.dart'
+    as anilist_providers;
+import 'package:linze/core/providers/user_list_provider.dart';
 
 class ProfileSettingsScreen extends ConsumerStatefulWidget {
   const ProfileSettingsScreen({super.key});
 
   @override
-  ConsumerState<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+  ConsumerState<ProfileSettingsScreen> createState() =>
+      _ProfileSettingsScreenState();
 }
 
 class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void _logout() async {
+    // Logout from AniList if connected
+    final authService = ref.read(anilistAuthServiceProvider);
+    if (authService.isLoggedIn) {
+      await authService.logout();
+    }
+
     // Set user as logged out but keep welcome screen as seen
     await FirstTimeService.setLoggedIn(false);
-    
+
     // Navigate back to login screen (not welcome screen for returning users)
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginSignupScreen()),
       (route) => false,
     );
+  }
+
+  void _disconnectAniList() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2C2C2E),
+        title: Text(
+          'Disconnect AniList',
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to disconnect your AniList account? Your watch progress will no longer sync automatically.',
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white70,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF8E8E93),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Disconnect',
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final authService = ref.read(anilistAuthServiceProvider);
+      await authService.logout();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'AniList account disconnected',
+              style: GoogleFonts.plusJakartaSans(),
+            ),
+            backgroundColor: const Color(0xFF5B13EC),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -37,7 +110,10 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
             // App Bar
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: Row(
                   children: [
                     IconButton(
@@ -69,43 +145,190 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(
-                            'https://lh3.googleusercontent.com/aida-public/AB6AXuATcP3hJPv-5TbUrys3aOKV6p4vcEfyrv5LkFqPLJqNqM8Tv044un2KjFqhBu2VgWOrYpnYq2hfLNTrj5_Beh5FqpZ9rNOOceeoORQLLtqIMxATFxMo3Po77mhOqVTNeVJEfWihEohm4_Rl98tXVU8h1YaCc7yPau_s9YXTEDt3duK5vS5mC0t3j3xkZtvdAWyDjvFrcNP9gqQCW6J_37nMc-nnUL147XF_hHWKPbLDsncZPpS4RMLBxeKXq-lRcFfWqIoVAg8gygk',
-                          ),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final anilistUserAsync = ref.watch(
+                      anilist_providers.anilistCurrentUserProvider,
+                    );
+                    final userStatsAsync = ref.watch(
+                      anilist_providers.userAnimeStatsProvider,
+                    );
+                    final isLoggedIn = ref.watch(anilistLoginStatusProvider);
+
+                    return Column(
                       children: [
-                        Text(
-                          'AnimeFan_92',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 96,
+                              height: 96,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF5B13EC),
+                                  width: 2,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 46,
+                                backgroundColor: const Color(0xFF2F2348),
+                                backgroundImage:
+                                    anilistUserAsync.hasValue &&
+                                        anilistUserAsync
+                                                .value?['avatar']?['large'] !=
+                                            null
+                                    ? CachedNetworkImageProvider(
+                                        anilistUserAsync
+                                            .value!['avatar']['large'],
+                                      )
+                                    : null,
+                                child:
+                                    !anilistUserAsync.hasValue ||
+                                        anilistUserAsync
+                                                .value?['avatar']?['large'] ==
+                                            null
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 48,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    anilistUserAsync.hasValue
+                                        ? (anilistUserAsync.value?['name'] ??
+                                              'Guest User')
+                                        : 'Guest User',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    isLoggedIn
+                                        ? 'AniList Member'
+                                        : 'Guest Mode',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      color: isLoggedIn
+                                          ? const Color(0xFF02A9FF)
+                                          : const Color(0xFFA7A7A7),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  if (isLoggedIn &&
+                                      userStatsAsync.hasValue &&
+                                      userStatsAsync.value!.totalWatched >
+                                          0) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${userStatsAsync.value!.totalWatched} anime • ${userStatsAsync.value!.totalEpisodes} episodes',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: const Color(0xFFA7A7A7),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (isLoggedIn)
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF02A9FF,
+                                  ).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF02A9FF),
+                                  size: 20,
+                                ),
+                              ),
+                          ],
                         ),
-                        Text(
-                          'Premium Member',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: const Color(0xFFA7A7A7),
-                            fontSize: 16,
+                        if (isLoggedIn &&
+                            userStatsAsync.hasValue &&
+                            userStatsAsync.value!.totalWatched > 0) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2F2348),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildStatItem(
+                                      'Watching',
+                                      userStatsAsync.hasValue
+                                          ? userStatsAsync.value!.watchingCount
+                                                .toString()
+                                          : '0',
+                                      const Color(0xFF02A9FF),
+                                    ),
+                                    _buildStatItem(
+                                      'Completed',
+                                      userStatsAsync.hasValue
+                                          ? userStatsAsync.value!.completedCount
+                                                .toString()
+                                          : '0',
+                                      const Color(0xFF00C851),
+                                    ),
+                                    _buildStatItem(
+                                      'Planning',
+                                      userStatsAsync.hasValue
+                                          ? userStatsAsync.value!.planningCount
+                                                .toString()
+                                          : '0',
+                                      const Color(0xFFFFB300),
+                                    ),
+                                  ],
+                                ),
+                                if (userStatsAsync.hasValue &&
+                                    userStatsAsync.value!.averageScore > 0) ...[
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.star,
+                                        color: const Color(0xFFFFD700),
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Average Score: ${userStatsAsync.value!.averageScore}/10',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -113,18 +336,116 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Divider(
-                  color: Color(0xFF444444),
-                  thickness: 1,
-                ),
+                child: Divider(color: Color(0xFF444444), thickness: 1),
               ),
             ),
-            // Account Section
+            // AniList Account Section
+            Consumer(
+              builder: (context, ref, child) {
+                final isLoggedIn = ref.watch(anilistLoginStatusProvider);
+                final syncStatus = ref.watch(syncStatusProvider);
+
+                if (isLoggedIn) {
+                  return SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Section header
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, top: 16.0),
+                        child: Text(
+                          'AniList Account',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      _buildListTile(
+                        icon: Icons.sync,
+                        title: 'Sync Status',
+                        trailingText: syncStatus.isUpToDate
+                            ? 'Up to date'
+                            : '${syncStatus.queueSize} pending',
+                        onTap: () async {
+                          if (syncStatus.hasPendingSync) {
+                            final messenger = ScaffoldMessenger.of(context);
+                            await ref.read(manualSyncProvider.future);
+                            if (!mounted) return;
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Sync completed',
+                                  style: GoogleFonts.plusJakartaSans(),
+                                ),
+                                backgroundColor: const Color(0xFF5B13EC),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      _buildListTile(
+                        icon: Icons.sync_problem,
+                        title: 'Manual Sync',
+                        onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          await ref.read(manualSyncProvider.future);
+                          if (!mounted) return;
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Manual sync completed',
+                                style: GoogleFonts.plusJakartaSans(),
+                              ),
+                              backgroundColor: const Color(0xFF5B13EC),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildListTile(
+                        icon: Icons.link_off,
+                        title: 'Disconnect AniList',
+                        onTap: _disconnectAniList,
+                      ),
+                    ]),
+                  );
+                } else {
+                  return SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Section header
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, top: 16.0),
+                        child: Text(
+                          'Account',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      _buildListTile(
+                        icon: Icons.login,
+                        title: 'Connect AniList',
+                        onTap: () {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => const LoginSignupScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                      ),
+                    ]),
+                  );
+                }
+              },
+            ),
+            // General Account Section
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(left: 16.0, top: 16.0),
                 child: Text(
-                  'Account',
+                  'General',
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white,
                     fontSize: 18,
@@ -133,14 +454,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                 ),
               ),
             ),
-            // Account List Items
+            // General List Items
             SliverList(
               delegate: SliverChildListDelegate([
-                _buildListTile(
-                  icon: Icons.person,
-                  title: 'Edit Profile',
-                  onTap: () {},
-                ),
                 _buildListTile(
                   icon: Icons.history,
                   title: 'Watch History',
@@ -173,15 +489,21 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                 _buildSwitchListTile(
                   icon: Icons.notifications,
                   title: 'Notifications',
-                  value: ref.watch(userPreferencesProvider).notificationsEnabled,
+                  value: ref
+                      .watch(userPreferencesProvider)
+                      .notificationsEnabled,
                   onChanged: (value) {
-                    ref.read(userPreferencesProvider.notifier).updateNotificationsEnabled(value);
+                    ref
+                        .read(userPreferencesProvider.notifier)
+                        .updatePreference('notificationsEnabled', value);
                   },
                 ),
                 _buildListTile(
                   icon: Icons.high_quality,
                   title: 'Streaming Quality',
-                  trailingText: ref.watch(userPreferencesProvider).streamingQuality,
+                  trailingText: ref
+                      .watch(userPreferencesProvider)
+                      .streamingQuality,
                   onTap: () => _showQualityDialog(),
                 ),
                 _buildSwitchListTile(
@@ -189,7 +511,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   title: 'Data Saver',
                   value: ref.watch(userPreferencesProvider).dataSaverMode,
                   onChanged: (value) {
-                    ref.read(userPreferencesProvider.notifier).updateDataSaverMode(value);
+                    ref
+                        .read(userPreferencesProvider.notifier)
+                        .updatePreference('dataSaverMode', value);
                   },
                 ),
               ]),
@@ -214,13 +538,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                 _buildListTile(
                   icon: Icons.audiotrack,
                   title: 'Preferred Audio',
-                  trailingText: ref.watch(userPreferencesProvider).preferredAudioType.toUpperCase(),
+                  trailingText: ref
+                      .watch(userPreferencesProvider)
+                      .preferredAudioType
+                      .toUpperCase(),
                   onTap: () => _showAudioTypeDialog(),
                 ),
                 _buildListTile(
                   icon: Icons.dns,
                   title: 'Default Server',
-                  trailingText: ref.watch(userPreferencesProvider).defaultServer,
+                  trailingText: ref
+                      .watch(userPreferencesProvider)
+                      .defaultServer,
                   onTap: () => _showServerDialog(),
                 ),
                 _buildSwitchListTile(
@@ -228,7 +557,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   title: 'Auto Skip Intro',
                   value: ref.watch(userPreferencesProvider).autoSkipIntro,
                   onChanged: (value) {
-                    ref.read(userPreferencesProvider.notifier).updateAutoSkipIntro(value);
+                    ref
+                        .read(userPreferencesProvider.notifier)
+                        .updateAutoSkipIntro(value);
                   },
                 ),
                 _buildSwitchListTile(
@@ -236,13 +567,16 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   title: 'Auto Skip Outro',
                   value: ref.watch(userPreferencesProvider).autoSkipOutro,
                   onChanged: (value) {
-                    ref.read(userPreferencesProvider.notifier).updateAutoSkipOutro(value);
+                    ref
+                        .read(userPreferencesProvider.notifier)
+                        .updateAutoSkipOutro(value);
                   },
                 ),
                 _buildListTile(
                   icon: Icons.speed,
                   title: 'Default Playback Speed',
-                  trailingText: '${ref.watch(userPreferencesProvider).defaultPlaybackSpeed}x',
+                  trailingText:
+                      '${ref.watch(userPreferencesProvider).defaultPlaybackSpeed}x',
                   onTap: () => _showPlaybackSpeedDialog(),
                 ),
                 _buildListTile(
@@ -309,9 +643,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
               ),
             ),
             // Bottom padding
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 40),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
         ),
       ),
@@ -333,18 +665,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
           color: const Color(0xFF2F2F2F),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
       title: Text(
         title,
-        style: GoogleFonts.plusJakartaSans(
-          color: Colors.white,
-          fontSize: 16,
-        ),
+        style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 16),
       ),
       trailing: trailingText != null
           ? Row(
@@ -357,16 +682,10 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                     fontSize: 16,
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF888888),
-                ),
+                const Icon(Icons.chevron_right, color: Color(0xFF888888)),
               ],
             )
-          : const Icon(
-              Icons.chevron_right,
-              color: Color(0xFF888888),
-            ),
+          : const Icon(Icons.chevron_right, color: Color(0xFF888888)),
       onTap: onTap,
     );
   }
@@ -386,18 +705,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
           color: const Color(0xFF2F2F2F),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
       title: Text(
         title,
-        style: GoogleFonts.plusJakartaSans(
-          color: Colors.white,
-          fontSize: 16,
-        ),
+        style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 16),
       ),
       trailing: Switch(
         value: value,
@@ -414,9 +726,11 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   }
 
   void _showAudioTypeDialog() {
-    final currentAudioType = ref.read(userPreferencesProvider).preferredAudioType;
+    final currentAudioType = ref
+        .read(userPreferencesProvider)
+        .preferredAudioType;
     final audioTypes = UserPreferencesService.getAudioTypes();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -439,7 +753,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   audioType.toUpperCase(),
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
                 subtitle: Text(
@@ -455,18 +771,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
                       width: 2,
                     ),
-                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF5B13EC)
+                        : Colors.transparent,
                   ),
                   child: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 16,
-                        )
+                      ? const Icon(Icons.check, color: Colors.white, size: 16)
                       : null,
                 ),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier).updatePreferredAudioType(audioType);
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .updatePreferredAudioType(audioType);
                   Navigator.of(context).pop();
                 },
               );
@@ -480,7 +796,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void _showServerDialog() {
     final currentServer = ref.read(userPreferencesProvider).defaultServer;
     final servers = UserPreferencesService.getAvailableServers();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -503,7 +819,9 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   server,
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
                 subtitle: Text(
@@ -519,18 +837,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
                       width: 2,
                     ),
-                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF5B13EC)
+                        : Colors.transparent,
                   ),
                   child: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 16,
-                        )
+                      ? const Icon(Icons.check, color: Colors.white, size: 16)
                       : null,
                 ),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier).updateDefaultServer(server);
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .updateDefaultServer(server);
                   Navigator.of(context).pop();
                 },
               );
@@ -544,7 +862,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void _showQualityDialog() {
     final currentQuality = ref.read(userPreferencesProvider).streamingQuality;
     final qualities = UserPreferencesService.getStreamingQualities();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -567,11 +885,15 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   quality.toUpperCase(),
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
                 subtitle: Text(
-                  quality == 'auto' ? 'Automatically adjust based on connection' : 'Fixed quality',
+                  quality == 'auto'
+                      ? 'Automatically adjust based on connection'
+                      : 'Fixed quality',
                   style: GoogleFonts.plusJakartaSans(color: Colors.grey),
                 ),
                 leading: Container(
@@ -583,18 +905,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
                       width: 2,
                     ),
-                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF5B13EC)
+                        : Colors.transparent,
                   ),
                   child: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 16,
-                        )
+                      ? const Icon(Icons.check, color: Colors.white, size: 16)
                       : null,
                 ),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier).updateStreamingQuality(quality);
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .updateStreamingQuality(quality);
                   Navigator.of(context).pop();
                 },
               );
@@ -608,7 +930,7 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
   void _showPlaybackSpeedDialog() {
     final currentSpeed = ref.read(userPreferencesProvider).defaultPlaybackSpeed;
     final speeds = UserPreferencesService.getPlaybackSpeeds();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -631,11 +953,17 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                   '${speed}x',
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
                 subtitle: Text(
-                  speed == 1.0 ? 'Normal speed' : speed < 1.0 ? 'Slower' : 'Faster',
+                  speed == 1.0
+                      ? 'Normal speed'
+                      : speed < 1.0
+                      ? 'Slower'
+                      : 'Faster',
                   style: GoogleFonts.plusJakartaSans(color: Colors.grey),
                 ),
                 leading: Container(
@@ -647,18 +975,18 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
                       color: isSelected ? const Color(0xFF5B13EC) : Colors.grey,
                       width: 2,
                     ),
-                    color: isSelected ? const Color(0xFF5B13EC) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF5B13EC)
+                        : Colors.transparent,
                   ),
                   child: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 16,
-                        )
+                      ? const Icon(Icons.check, color: Colors.white, size: 16)
                       : null,
                 ),
                 onTap: () {
-                  ref.read(userPreferencesProvider.notifier).updateDefaultPlaybackSpeed(speed);
+                  ref
+                      .read(userPreferencesProvider.notifier)
+                      .updateDefaultPlaybackSpeed(speed);
                   Navigator.of(context).pop();
                 },
               );
@@ -741,5 +1069,29 @@ class _ProfileSettingsScreenState extends ConsumerState<ProfileSettingsScreen> {
       default:
         return 'Standard server';
     }
+  }
+
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            color: color,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white70,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 }

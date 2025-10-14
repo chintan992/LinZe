@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:linze/core/models/watch_progress.dart';
+import 'package:linze/core/services/anilist_sync_service.dart';
+import 'package:linze/core/services/anime_id_mapper.dart';
 
 class WatchProgressService {
   static const String _progressKey = 'watch_progress';
@@ -14,6 +16,19 @@ class WatchProgressService {
   }
   
   WatchProgressService._();
+
+  // AniList sync dependencies (will be injected)
+  AniListSyncService? _anilistSyncService;
+  AnimeIdMapper? _animeIdMapper;
+
+  /// Initialize with AniList sync dependencies
+  void initializeWithAniList({
+    required AniListSyncService anilistSyncService,
+    required AnimeIdMapper animeIdMapper,
+  }) {
+    _anilistSyncService = anilistSyncService;
+    _animeIdMapper = animeIdMapper;
+  }
 
   /// Save watch progress for an episode
   Future<void> saveProgress(WatchProgress progress) async {
@@ -28,6 +43,9 @@ class WatchProgressService {
       
       // Update stats for this anime
       await _updateAnimeStats(progress.animeId);
+      
+      // Sync with AniList if available
+      await _syncProgressToAniList(progress);
     } catch (e) {
       debugPrint('Error saving watch progress: $e');
     }
@@ -124,6 +142,7 @@ class WatchProgressService {
     bool markAsCompleted = false,
   }) async {
     final progress = (currentPosition.inSeconds / episodeDuration.inSeconds).clamp(0.0, 1.0);
+    final isCompleted = markAsCompleted || progress >= 0.9; // Consider 90% as completed
     
     final watchProgress = WatchProgress(
       animeId: animeId,
@@ -131,11 +150,16 @@ class WatchProgressService {
       progress: progress,
       lastWatched: DateTime.now(),
       totalWatchTime: currentPosition,
-      isCompleted: markAsCompleted || progress >= 0.9, // Consider 90% as completed
+      isCompleted: isCompleted,
       episodeDuration: episodeDuration,
     );
     
     await saveProgress(watchProgress);
+    
+    // If episode is completed, sync milestone to AniList
+    if (isCompleted) {
+      await _syncEpisodeCompletionToAniList(animeId, episodeId);
+    }
   }
 
   /// Mark episode as completed
@@ -151,6 +175,9 @@ class WatchProgressService {
     );
     
     await saveProgress(progress);
+    
+    // Sync episode completion to AniList
+    await _syncEpisodeCompletionToAniList(animeId, episodeId);
   }
 
   /// Mark episode as not watched (reset progress)
@@ -278,6 +305,137 @@ class WatchProgressService {
       await prefs.setString(_progressKey, jsonEncode(progressMap));
     } catch (e) {
       debugPrint('Error importing progress: $e');
+    }
+  }
+
+  /// Sync progress to AniList
+  Future<void> _syncProgressToAniList(WatchProgress progress) async {
+    if (_anilistSyncService == null || _animeIdMapper == null) return;
+
+    try {
+      // Find AniList media ID for this anime
+      final anilistMediaId = await _findAniListMediaId(progress.animeId);
+      if (anilistMediaId == null) return;
+
+      // Calculate current episode number from progress
+      final episodeNumber = _extractEpisodeNumber(progress.episodeId);
+      if (episodeNumber == null) return;
+
+      // Sync progress to AniList
+      await _anilistSyncService!.syncLocalProgressToAniList(anilistMediaId, episodeNumber);
+      
+      debugPrint('Synced progress to AniList: Episode $episodeNumber for media $anilistMediaId');
+    } catch (e) {
+      debugPrint('Failed to sync progress to AniList: $e');
+    }
+  }
+
+  /// Sync episode completion milestone to AniList
+  Future<void> _syncEpisodeCompletionToAniList(String animeId, String episodeId) async {
+    if (_anilistSyncService == null || _animeIdMapper == null) return;
+
+    try {
+      // Find AniList media ID for this anime
+      final anilistMediaId = await _findAniListMediaId(animeId);
+      if (anilistMediaId == null) return;
+
+      // Calculate current episode number from progress
+      final episodeNumber = _extractEpisodeNumber(episodeId);
+      if (episodeNumber == null) return;
+
+      // Sync progress to AniList
+      await _anilistSyncService!.syncLocalProgressToAniList(anilistMediaId, episodeNumber);
+      
+      debugPrint('Synced episode completion to AniList: Episode $episodeNumber for media $anilistMediaId');
+    } catch (e) {
+      debugPrint('Failed to sync episode completion to AniList: $e');
+    }
+  }
+
+  /// Find AniList media ID for a given anime ID
+  Future<int?> _findAniListMediaId(String animeId) async {
+    if (_animeIdMapper == null) return null;
+
+    try {
+      // First try to get existing mapping
+      final anilistId = _animeIdMapper!.getStreamingId(int.tryParse(animeId) ?? 0);
+      if (anilistId != null) {
+        return int.tryParse(anilistId);
+      }
+
+      // If no mapping exists, we would need to search AniList
+      // This is a simplified implementation - in practice, you'd want to
+      // cache anime metadata or search by title
+      return null;
+    } catch (e) {
+      debugPrint('Failed to find AniList media ID: $e');
+      return null;
+    }
+  }
+
+  /// Extract episode number from episode ID
+  int? _extractEpisodeNumber(String episodeId) {
+    try {
+      // Try to extract episode number from episode ID
+      // This is a simplified implementation - adjust based on your episode ID format
+      final regex = RegExp(r'episode[_-]?(\d+)', caseSensitive: false);
+      final match = regex.firstMatch(episodeId);
+      if (match != null) {
+        return int.tryParse(match.group(1) ?? '');
+      }
+
+      // Fallback: try to find any number in the episode ID
+      final numbers = RegExp(r'\d+').allMatches(episodeId);
+      if (numbers.isNotEmpty) {
+        return int.tryParse(numbers.last.group(0) ?? '');
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Failed to extract episode number: $e');
+      return null;
+    }
+  }
+
+  /// Sync all progress from AniList to local storage
+  Future<void> syncFromAniList() async {
+    if (_anilistSyncService == null) return;
+
+    try {
+      await _anilistSyncService!.syncAniListToLocal();
+      debugPrint('Synced progress from AniList to local storage');
+    } catch (e) {
+      debugPrint('Failed to sync from AniList: $e');
+    }
+  }
+
+  /// Get anime progress summary for AniList sync
+  Future<Map<String, int>> getAnimeProgressSummary(String animeId) async {
+    try {
+      final progressList = await getAnimeProgress(animeId);
+      final completedEpisodes = progressList.where((p) => p.isCompleted).length;
+      final totalEpisodes = progressList.length;
+      final lastWatchedEpisode = progressList
+          .where((p) => !p.isCompleted && p.progress > 0)
+          .isNotEmpty
+          ? progressList
+              .where((p) => !p.isCompleted && p.progress > 0)
+              .map((p) => _extractEpisodeNumber(p.episodeId) ?? 0)
+              .reduce((a, b) => a > b ? a : b)
+          : 0;
+
+      return {
+        'completedEpisodes': completedEpisodes,
+        'totalEpisodes': totalEpisodes,
+        'lastWatchedEpisode': lastWatchedEpisode,
+      };
+    } catch (e) {
+      debugPrint('Failed to get anime progress summary: $e');
+      return {
+        'completedEpisodes': 0,
+        'totalEpisodes': 0,
+        'lastWatchedEpisode': 0,
+      };
     }
   }
 }

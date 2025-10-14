@@ -10,39 +10,38 @@ import 'package:linze/features/anime_detail/presentation/widgets/character_grid_
 
 class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
-  
+
   _StickyTabBarDelegate(this.tabBar);
-  
+
   @override
   double get minExtent => 64;
-  
+
   @override
   double get maxExtent => 64;
-  
+
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF161022),
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFF2F2F2F),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
         ),
         child: tabBar,
       ),
     );
   }
-  
+
   @override
   bool shouldRebuild(_StickyTabBarDelegate oldDelegate) => false;
 }
@@ -64,7 +63,8 @@ class TabbedContentWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TabbedContentWidget> createState() => _TabbedContentWidgetState();
+  ConsumerState<TabbedContentWidget> createState() =>
+      _TabbedContentWidgetState();
 }
 
 class TabbedContentSliverWidget extends ConsumerStatefulWidget {
@@ -84,10 +84,12 @@ class TabbedContentSliverWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TabbedContentSliverWidget> createState() => _TabbedContentSliverWidgetState();
+  ConsumerState<TabbedContentSliverWidget> createState() =>
+      _TabbedContentSliverWidgetState();
 }
 
-class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverWidget>
+class _TabbedContentSliverWidgetState
+    extends ConsumerState<TabbedContentSliverWidget>
     with TickerProviderStateMixin {
   late TabController _tabController;
 
@@ -226,52 +228,47 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
         final anime = detail.data ?? widget.anime;
         final relatedAnime = detail.relatedData ?? [];
         final recommendedAnime = detail.recommendedData ?? [];
-        
+
         return SliverList(
           delegate: SliverChildListDelegate([
             // Description
             _buildDescriptionSection(anime),
-            
+
             const SizedBox(height: 24),
-            
+
             // Information
             _buildInformationSection(anime),
-            
+
             const SizedBox(height: 24),
-            
+
             // Related anime preview
             if (relatedAnime.isNotEmpty)
               _buildRelatedAnimePreview(relatedAnime, 'Related Anime'),
-            
-            if (relatedAnime.isNotEmpty)
-              const SizedBox(height: 16),
-            
+
+            if (relatedAnime.isNotEmpty) const SizedBox(height: 16),
+
             // Recommended anime preview
             if (recommendedAnime.isNotEmpty)
               _buildRelatedAnimePreview(recommendedAnime, 'Recommended'),
-            
+
             const SizedBox(height: 24), // Extra padding at bottom
           ]),
         );
       },
       loading: () => SliverToBoxAdapter(
-        child: Container(
+        child: SizedBox(
           height: 200,
           child: const Center(child: CircularProgressIndicator()),
         ),
       ),
       error: (error, stack) => SliverToBoxAdapter(
-        child: Container(
+        child: SizedBox(
           height: 200,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: Colors.red,
-                  size: 48,
-                ),
+                Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   'Error loading anime details',
@@ -292,10 +289,10 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
     return widget.episodes.when(
       data: (episodesData) {
         final episodesList = episodesData.episodes ?? [];
-        
+
         if (episodesList.isEmpty) {
           return SliverToBoxAdapter(
-            child: Container(
+            child: SizedBox(
               height: 200,
               child: Center(
                 child: Column(
@@ -320,39 +317,32 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
             ),
           );
         }
-        
+
         return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final episode = episodesList[index];
-              return EpisodeCardWidget(
-                episode: episode,
-                anime: widget.anime,
-                onTap: () => widget.onEpisodeTap(episode, index, episodesList),
-              );
-            },
-            childCount: episodesList.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final episode = episodesList[index];
+            return EpisodeCardWidget(
+              episode: episode,
+              anime: widget.anime,
+              onTap: () => widget.onEpisodeTap(episode, index, episodesList),
+            );
+          }, childCount: episodesList.length),
         );
       },
       loading: () => SliverToBoxAdapter(
-        child: Container(
+        child: SizedBox(
           height: 200,
           child: const Center(child: CircularProgressIndicator()),
         ),
       ),
       error: (error, stack) => SliverToBoxAdapter(
-        child: Container(
+        child: SizedBox(
           height: 200,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: Colors.red,
-                  size: 48,
-                ),
+                Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   'Error loading episodes',
@@ -376,21 +366,17 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
           final charactersList = charactersData.data ?? [];
           return CharacterGridWidget(characters: charactersList);
         },
-        loading: () => Container(
+        loading: () => SizedBox(
           height: 200,
           child: const Center(child: CircularProgressIndicator()),
         ),
-        error: (error, stack) => Container(
+        error: (error, stack) => SizedBox(
           height: 200,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: Colors.red,
-                  size: 48,
-                ),
+                Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   'Error loading characters',
@@ -412,40 +398,36 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
       data: (detail) {
         final relatedAnime = detail.relatedData ?? [];
         final recommendedAnime = detail.recommendedData ?? [];
-        
+
         return SliverList(
           delegate: SliverChildListDelegate([
             if (relatedAnime.isNotEmpty)
               _buildRelatedAnimeSection(relatedAnime, 'Related Anime'),
-            
+
             if (relatedAnime.isNotEmpty && recommendedAnime.isNotEmpty)
               const SizedBox(height: 24),
-            
+
             if (recommendedAnime.isNotEmpty)
               _buildRelatedAnimeSection(recommendedAnime, 'Recommended'),
-            
+
             const SizedBox(height: 24), // Extra padding at bottom
           ]),
         );
       },
       loading: () => SliverToBoxAdapter(
-        child: Container(
+        child: SizedBox(
           height: 200,
           child: const Center(child: CircularProgressIndicator()),
         ),
       ),
       error: (error, stack) => SliverToBoxAdapter(
-        child: Container(
+        child: SizedBox(
           height: 200,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: Colors.red,
-                  size: 48,
-                ),
+                Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   'Error loading related anime',
@@ -469,10 +451,7 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF2F2F2F),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,18 +482,15 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
     if (anime.animeInfo == null) {
       return const SizedBox.shrink();
     }
-    
+
     final info = anime.animeInfo!;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF2F2F2F),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,7 +518,7 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
 
   Widget _buildInfoRow(String label, String? value) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -675,10 +651,7 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF2F2F2F),
-                  width: 1,
-                ),
+                border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
               ),
               child: Material(
                 color: Colors.transparent,
@@ -704,7 +677,9 @@ class _TabbedContentSliverWidgetState extends ConsumerState<TabbedContentSliverW
                                 placeholder: (context, url) => Container(
                                   color: const Color(0xFF2F2F2F),
                                   child: const Center(
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
                                 errorWidget: (context, url, error) => Container(
@@ -792,9 +767,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF161022),
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -804,10 +777,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
             decoration: BoxDecoration(
               color: const Color(0xFF1A1A1A),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFF2F2F2F),
-                width: 1,
-              ),
+              border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
             ),
             child: TabBar(
               controller: _tabController,
@@ -837,7 +807,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
               ],
             ),
           ),
-          
+
           // Tab content
           Flexible(
             child: TabBarView(
@@ -861,7 +831,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
         final anime = detail.data ?? widget.anime;
         final relatedAnime = detail.relatedData ?? [];
         final recommendedAnime = detail.recommendedData ?? [];
-        
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -869,21 +839,20 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
             children: [
               // Description
               _buildDescriptionSection(anime),
-              
+
               const SizedBox(height: 24),
-              
+
               // Information
               _buildInformationSection(anime),
-              
+
               const SizedBox(height: 24),
-              
+
               // Related anime preview
               if (relatedAnime.isNotEmpty)
                 _buildRelatedAnimePreview(relatedAnime, 'Related Anime'),
-              
-              if (relatedAnime.isNotEmpty)
-                const SizedBox(height: 16),
-              
+
+              if (relatedAnime.isNotEmpty) const SizedBox(height: 16),
+
               // Recommended anime preview
               if (recommendedAnime.isNotEmpty)
                 _buildRelatedAnimePreview(recommendedAnime, 'Recommended'),
@@ -896,11 +865,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Colors.red,
-              size: 48,
-            ),
+            Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             Text(
               'Error loading anime details',
@@ -919,7 +884,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
     return widget.episodes.when(
       data: (episodesData) {
         final episodesList = episodesData.episodes ?? [];
-        
+
         if (episodesList.isEmpty) {
           return Center(
             child: Column(
@@ -942,7 +907,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
             ),
           );
         }
-        
+
         return ListView.builder(
           padding: const EdgeInsets.symmetric(vertical: 16),
           itemCount: episodesList.length,
@@ -961,11 +926,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Colors.red,
-              size: 48,
-            ),
+            Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             Text(
               'Error loading episodes',
@@ -991,11 +952,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Colors.red,
-              size: 48,
-            ),
+            Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             Text(
               'Error loading characters',
@@ -1015,7 +972,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
       data: (detail) {
         final relatedAnime = detail.relatedData ?? [];
         final recommendedAnime = detail.recommendedData ?? [];
-        
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -1023,10 +980,10 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
             children: [
               if (relatedAnime.isNotEmpty)
                 _buildRelatedAnimeSection(relatedAnime, 'Related Anime'),
-              
+
               if (relatedAnime.isNotEmpty && recommendedAnime.isNotEmpty)
                 const SizedBox(height: 24),
-              
+
               if (recommendedAnime.isNotEmpty)
                 _buildRelatedAnimeSection(recommendedAnime, 'Recommended'),
             ],
@@ -1038,11 +995,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Colors.red,
-              size: 48,
-            ),
+            Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             Text(
               'Error loading related anime',
@@ -1063,10 +1016,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF2F2F2F),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1097,18 +1047,15 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
     if (anime.animeInfo == null) {
       return const SizedBox.shrink();
     }
-    
+
     final info = anime.animeInfo!;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF2F2F2F),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1136,7 +1083,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
 
   Widget _buildInfoRow(String label, String? value) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -1269,10 +1216,7 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF2F2F2F),
-                  width: 1,
-                ),
+                border: Border.all(color: const Color(0xFF2F2F2F), width: 1),
               ),
               child: Material(
                 color: Colors.transparent,
@@ -1298,7 +1242,9 @@ class _TabbedContentWidgetState extends ConsumerState<TabbedContentWidget>
                                 placeholder: (context, url) => Container(
                                   color: const Color(0xFF2F2F2F),
                                   child: const Center(
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
                                 errorWidget: (context, url, error) => Container(

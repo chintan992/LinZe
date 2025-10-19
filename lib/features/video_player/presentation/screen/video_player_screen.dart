@@ -43,7 +43,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   List<Server> _availableServers = [];
   Server? _selectedServer;
   String _selectedType = 'sub';
-  
+
   // Enhanced features - will be initialized from user preferences
   double _playbackSpeed = 1.0;
   bool _isAutoSkipIntro = true;
@@ -51,15 +51,17 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   Duration? _lastWatchedPosition;
   List<Track> _availableSubtitles = [];
   Track? _selectedSubtitle;
-  
+
   // Skip tracking to prevent loops
   bool _hasSkippedIntro = false;
   bool _hasSkippedOutro = false;
-  
+
   // Watch progress tracking
   Timer? _progressTimer;
   Duration _lastSavedPosition = Duration.zero;
-  
+  // Active flag to prevent using `ref` after the widget has been disposed
+  bool _isActive = true;
+
   // Episode navigation overlay state
   bool _showNextEpisodeOverlay = false;
   Timer? _autoPlayTimer;
@@ -87,24 +89,30 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     try {
       // Get user preferences
       final userPreferences = ref.read(userPreferencesProvider);
-      
+
       // Get servers from the streaming API response instead of separate endpoint
       final apiService = ref.read(apiServiceProvider);
       final streamingInfo = await apiService.getStreamingInfo(
         id: widget.episodeId,
         server: userPreferences.defaultServer, // Use user's preferred server
-        type: userPreferences.preferredAudioType, // Use user's preferred audio type
+        type: userPreferences
+            .preferredAudioType, // Use user's preferred audio type
       );
-      
+
       setState(() {
         _availableServers = streamingInfo.servers ?? [];
-        _selectedServer = _availableServers.isNotEmpty ? _availableServers.first : null;
+        _selectedServer = _availableServers.isNotEmpty
+            ? _availableServers.first
+            : null;
         _selectedType = widget.streamingLink.type ?? 'sub';
-        
+
         // Load subtitles from streaming link
         _availableSubtitles = widget.streamingLink.tracks ?? [];
-        _selectedSubtitle = _availableSubtitles.isNotEmpty 
-            ? _availableSubtitles.firstWhere((track) => track.isDefault == true, orElse: () => _availableSubtitles.first)
+        _selectedSubtitle = _availableSubtitles.isNotEmpty
+            ? _availableSubtitles.firstWhere(
+                (track) => track.isDefault == true,
+                orElse: () => _availableSubtitles.first,
+              )
             : null;
       });
 
@@ -121,11 +129,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     try {
       if (widget.streamingLink.link?.file != null) {
         final videoUrl = widget.streamingLink.link!.file!;
-        
+
         _videoPlayerController = VideoPlayerController.networkUrl(
           Uri.parse(videoUrl),
           httpHeaders: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Referer': 'https://rapid-cloud.co/',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -153,9 +162,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           placeholder: Container(
             color: Colors.black,
             child: const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF5B13EC),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF5B13EC)),
             ),
           ),
           autoInitialize: true,
@@ -166,13 +173,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         // Setup auto-skip intro/outro
         _setupAutoSkip();
-        
+
         // Setup watch progress tracking
         _setupWatchProgressTracking();
-        
+
         // Restore playback position
         _restorePlaybackPosition();
-        
+
         // Add listener to save position periodically
         _videoPlayerController.addListener(_onPositionChanged);
 
@@ -201,32 +208,38 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _checkForSkipSegments() {
     if (!_videoPlayerController.value.isInitialized) return;
-    
+
     final currentPosition = _videoPlayerController.value.position;
     final intro = widget.streamingLink.intro;
     final outro = widget.streamingLink.outro;
-    
+
     // Auto-skip intro
     if (_isAutoSkipIntro && intro != null && !_hasSkippedIntro) {
       final introStart = Duration(seconds: intro['start'] ?? 0);
       final introEnd = Duration(seconds: intro['end'] ?? 0);
-      
+
       // Check if we're near the intro start (with a small buffer to avoid loops)
-      if (currentPosition >= introStart && currentPosition <= introStart + const Duration(seconds: 5)) {
-        _videoPlayerController.seekTo(introEnd + const Duration(seconds: 2)); // Add 2 seconds buffer
+      if (currentPosition >= introStart &&
+          currentPosition <= introStart + const Duration(seconds: 5)) {
+        _videoPlayerController.seekTo(
+          introEnd + const Duration(seconds: 2),
+        ); // Add 2 seconds buffer
         _showSkipMessage('Skipping intro...');
         _hasSkippedIntro = true;
       }
     }
-    
+
     // Auto-skip outro
     if (_isAutoSkipOutro && outro != null && !_hasSkippedOutro) {
       final outroStart = Duration(seconds: outro['start'] ?? 0);
       final outroEnd = Duration(seconds: outro['end'] ?? 0);
-      
+
       // Check if we're near the outro start (with a small buffer to avoid loops)
-      if (currentPosition >= outroStart && currentPosition <= outroStart + const Duration(seconds: 5)) {
-        _videoPlayerController.seekTo(outroEnd + const Duration(seconds: 2)); // Add 2 seconds buffer
+      if (currentPosition >= outroStart &&
+          currentPosition <= outroStart + const Duration(seconds: 5)) {
+        _videoPlayerController.seekTo(
+          outroEnd + const Duration(seconds: 2),
+        ); // Add 2 seconds buffer
         _showSkipMessage('Skipping outro...');
         _hasSkippedOutro = true;
       }
@@ -250,7 +263,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       final currentPosition = _videoPlayerController.value.position;
       final duration = _videoPlayerController.value.duration;
       final newPosition = currentPosition + const Duration(seconds: 10);
-      
+
       if (newPosition < duration) {
         _videoPlayerController.seekTo(newPosition);
         _showSkipMessage('⏭️ +10s');
@@ -262,7 +275,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (_videoPlayerController.value.isInitialized) {
       final currentPosition = _videoPlayerController.value.position;
       final newPosition = currentPosition - const Duration(seconds: 10);
-      
+
       if (newPosition > Duration.zero) {
         _videoPlayerController.seekTo(newPosition);
         _showSkipMessage('⏮️ -10s');
@@ -274,17 +287,20 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (_videoPlayerController.value.isInitialized) {
       final position = _videoPlayerController.value.position;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('playback_position_${widget.episodeId}', position.inSeconds);
+      await prefs.setInt(
+        'playback_position_${widget.episodeId}',
+        position.inSeconds,
+      );
     }
   }
 
   Future<void> _restorePlaybackPosition() async {
     final prefs = await SharedPreferences.getInstance();
     final savedPosition = prefs.getInt('playback_position_${widget.episodeId}');
-    
+
     if (savedPosition != null && savedPosition > 0) {
       _lastWatchedPosition = Duration(seconds: savedPosition);
-      
+
       // Show resume dialog if position is significant (more than 30 seconds)
       if (savedPosition > 30) {
         _showResumeDialog();
@@ -294,7 +310,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _showResumeDialog() {
     if (!mounted || _lastWatchedPosition == null) return;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -349,7 +365,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final hours = twoDigits(duration.inHours);
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
-    
+
     if (duration.inHours > 0) {
       return '$hours:$minutes:$seconds';
     } else {
@@ -368,7 +384,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   Future<void> _playNextEpisode() async {
-    if (widget.episodes == null || widget.currentEpisodeIndex >= widget.episodes!.length - 1) {
+    if (widget.episodes == null ||
+        widget.currentEpisodeIndex >= widget.episodes!.length - 1) {
       _showEpisodeNavigationMessage('No next episode available');
       return;
     }
@@ -408,11 +425,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
       if (streamingInfo.streamingLink?.link?.file != null) {
         final videoUrl = streamingInfo.streamingLink!.link!.file!;
-        
+
         _videoPlayerController = VideoPlayerController.networkUrl(
           Uri.parse(videoUrl),
           httpHeaders: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Referer': 'https://rapid-cloud.co/',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -440,9 +458,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           placeholder: Container(
             color: Colors.black,
             child: const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF5B13EC),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF5B13EC)),
             ),
           ),
           autoInitialize: true,
@@ -452,7 +468,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         // Setup auto-skip intro/outro
         _setupAutoSkip();
-        
+
         // Add listener to save position periodically
         _videoPlayerController.addListener(_onPositionChanged);
 
@@ -475,7 +491,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _errorMessage = 'Failed to load episode: $e';
         _isLoading = false;
       });
-      
+
       if (mounted) {
         _showEpisodeNavigationMessage('Failed to load episode: $e');
       }
@@ -491,6 +507,52 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           backgroundColor: const Color(0xFF5B13EC),
         ),
       );
+    }
+  }
+
+  void _handleBackNavigation() {
+    debugPrint('VideoPlayerScreen: Starting back navigation cleanup...');
+
+    // Cancel any running timers first
+    _autoPlayTimer?.cancel();
+    _progressTimer?.cancel();
+    debugPrint('VideoPlayerScreen: Timers cancelled');
+
+    // Pause the video if it's playing
+    if (_videoPlayerController.value.isInitialized &&
+        _videoPlayerController.value.isPlaying) {
+      _videoPlayerController.pause();
+      debugPrint('VideoPlayerScreen: Video paused');
+    }
+
+    // Remove listeners to prevent further callbacks
+    try {
+      _videoPlayerController.removeListener(_checkForSkipSegments);
+      _videoPlayerController.removeListener(_onPositionChanged);
+      debugPrint('VideoPlayerScreen: Listeners removed');
+    } catch (e) {
+      debugPrint('VideoPlayerScreen: Error removing listeners: $e');
+    }
+
+    // Save final progress before navigating back
+    _savePlaybackPosition();
+    _saveFinalProgress();
+    debugPrint('VideoPlayerScreen: Final progress saved');
+
+    // Navigate back
+    Navigator.pop(context);
+    debugPrint('VideoPlayerScreen: Navigation completed');
+  }
+
+  // Adapter for the new PopScope API. The SDK expects a callback with the
+  // signature (bool didPop, T result). Provide a matching handler that runs
+  // cleanup when the system back invocation did not pop the route.
+  void _onPopInvokedWithResult(bool didPop, dynamic result) {
+    if (!didPop) {
+      debugPrint(
+        'VideoPlayerScreen: System back button pressed - pausing video and cleaning up',
+      );
+      _handleBackNavigation();
     }
   }
 
@@ -532,12 +594,20 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           child: DropdownButton<double>(
                             value: _playbackSpeed,
                             dropdownColor: const Color(0xFF3A3A3C),
-                            style: GoogleFonts.plusJakartaSans(color: Colors.white),
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                            ),
                             items: const [
                               DropdownMenuItem(value: 0.5, child: Text('0.5x')),
-                              DropdownMenuItem(value: 0.75, child: Text('0.75x')),
+                              DropdownMenuItem(
+                                value: 0.75,
+                                child: Text('0.75x'),
+                              ),
                               DropdownMenuItem(value: 1.0, child: Text('1x')),
-                              DropdownMenuItem(value: 1.25, child: Text('1.25x')),
+                              DropdownMenuItem(
+                                value: 1.25,
+                                child: Text('1.25x'),
+                              ),
                               DropdownMenuItem(value: 1.5, child: Text('1.5x')),
                               DropdownMenuItem(value: 2.0, child: Text('2x')),
                             ],
@@ -545,14 +615,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                               setDialogState(() {
                                 _playbackSpeed = value!;
                               });
-                              _videoPlayerController.setPlaybackSpeed(_playbackSpeed);
+                              _videoPlayerController.setPlaybackSpeed(
+                                _playbackSpeed,
+                              );
                             },
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Auto-skip settings
                     Text(
                       'Auto-Skip Settings',
@@ -576,7 +648,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           _hasSkippedIntro = false;
                         });
                       },
-                            activeThumbColor: const Color(0xFF5B13EC),
+                      activeThumbColor: const Color(0xFF5B13EC),
                     ),
                     SwitchListTile(
                       title: Text(
@@ -591,9 +663,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           _hasSkippedOutro = false;
                         });
                       },
-                            activeThumbColor: const Color(0xFF5B13EC),
+                      activeThumbColor: const Color(0xFF5B13EC),
                     ),
-                    
+
                     // Subtitle selection
                     if (_availableSubtitles.isNotEmpty) ...[
                       const SizedBox(height: 16),
@@ -612,7 +684,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         style: GoogleFonts.plusJakartaSans(color: Colors.white),
                         hint: Text(
                           'Select Subtitle',
-                          style: GoogleFonts.plusJakartaSans(color: Colors.white70),
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white70,
+                          ),
                         ),
                         items: _availableSubtitles.map((track) {
                           return DropdownMenuItem<Track>(
@@ -676,11 +750,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
       if (streamingInfo.streamingLink?.link?.file != null) {
         final videoUrl = streamingInfo.streamingLink!.link!.file!;
-        
+
         _videoPlayerController = VideoPlayerController.networkUrl(
           Uri.parse(videoUrl),
           httpHeaders: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Referer': 'https://rapid-cloud.co/',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -708,9 +783,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           placeholder: Container(
             color: Colors.black,
             child: const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF5B13EC),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF5B13EC)),
             ),
           ),
           autoInitialize: true,
@@ -724,7 +797,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Switched to ${server.serverName} (${type.toUpperCase()})'),
+              content: Text(
+                'Switched to ${server.serverName} (${type.toUpperCase()})',
+              ),
               backgroundColor: const Color(0xFF5B13EC),
               duration: const Duration(seconds: 2),
             ),
@@ -741,7 +816,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _errorMessage = 'Failed to switch server: $e';
         _isLoading = false;
       });
-      
+
       // Show error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -758,7 +833,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   void _showServerSelectionDialog() {
     String tempSelectedType = _selectedType;
     Server? tempSelectedServer = _selectedServer;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -793,38 +868,58 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildAudioTypeButton('sub', 'Sub', tempSelectedType, (type) {
-                            setDialogState(() {
-                              tempSelectedType = type;
-                              // Reset server selection when audio type changes
-                              final availableServersForType = _availableServers
-                                  .where((server) => server.type == tempSelectedType)
-                                  .toList();
-                              tempSelectedServer = availableServersForType.isNotEmpty 
-                                  ? availableServersForType.first 
-                                  : null;
-                            });
-                          }),
+                          child: _buildAudioTypeButton(
+                            'sub',
+                            'Sub',
+                            tempSelectedType,
+                            (type) {
+                              setDialogState(() {
+                                tempSelectedType = type;
+                                // Reset server selection when audio type changes
+                                final availableServersForType =
+                                    _availableServers
+                                        .where(
+                                          (server) =>
+                                              server.type == tempSelectedType,
+                                        )
+                                        .toList();
+                                tempSelectedServer =
+                                    availableServersForType.isNotEmpty
+                                    ? availableServersForType.first
+                                    : null;
+                              });
+                            },
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _buildAudioTypeButton('dub', 'Dub', tempSelectedType, (type) {
-                            setDialogState(() {
-                              tempSelectedType = type;
-                              // Reset server selection when audio type changes
-                              final availableServersForType = _availableServers
-                                  .where((server) => server.type == tempSelectedType)
-                                  .toList();
-                              tempSelectedServer = availableServersForType.isNotEmpty 
-                                  ? availableServersForType.first 
-                                  : null;
-                            });
-                          }),
+                          child: _buildAudioTypeButton(
+                            'dub',
+                            'Dub',
+                            tempSelectedType,
+                            (type) {
+                              setDialogState(() {
+                                tempSelectedType = type;
+                                // Reset server selection when audio type changes
+                                final availableServersForType =
+                                    _availableServers
+                                        .where(
+                                          (server) =>
+                                              server.type == tempSelectedType,
+                                        )
+                                        .toList();
+                                tempSelectedServer =
+                                    availableServersForType.isNotEmpty
+                                    ? availableServersForType.first
+                                    : null;
+                              });
+                            },
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Server Selection
                     Text(
                       'Available Servers (${tempSelectedType.toUpperCase()})',
@@ -839,16 +934,21 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       child: SingleChildScrollView(
                         child: Column(
                           children: _availableServers
-                              .where((server) => server.type == tempSelectedType)
-                              .map((server) => _buildServerButton(
-                                server, 
-                                tempSelectedServer?.serverName == server.serverName,
-                                () {
-                                  setDialogState(() {
-                                    tempSelectedServer = server;
-                                  });
-                                },
-                              ))
+                              .where(
+                                (server) => server.type == tempSelectedType,
+                              )
+                              .map(
+                                (server) => _buildServerButton(
+                                  server,
+                                  tempSelectedServer?.serverName ==
+                                      server.serverName,
+                                  () {
+                                    setDialogState(() {
+                                      tempSelectedServer = server;
+                                    });
+                                  },
+                                ),
+                              )
                               .toList(),
                         ),
                       ),
@@ -889,7 +989,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-  Widget _buildAudioTypeButton(String type, String label, String selectedType, Function(String) onTap) {
+  Widget _buildAudioTypeButton(
+    String type,
+    String label,
+    String selectedType,
+    Function(String) onTap,
+  ) {
     final isSelected = selectedType == type;
     return GestureDetector(
       onTap: () => onTap(type),
@@ -912,7 +1017,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-  Widget _buildServerButton(Server server, bool isSelected, VoidCallback onTap) {
+  Widget _buildServerButton(
+    Server server,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
@@ -920,16 +1029,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF5B13EC) : const Color(0xFF3A3A3C),
+            color: isSelected
+                ? const Color(0xFF5B13EC)
+                : const Color(0xFF3A3A3C),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.dns,
-                color: Colors.white,
-                size: 20,
-              ),
+              Icon(Icons.dns, color: Colors.white, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -941,12 +1048,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   ),
                 ),
               ),
-              if (isSelected)
-                Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 20,
-                ),
+              if (isSelected) Icon(Icons.check, color: Colors.white, size: 20),
             ],
           ),
         ),
@@ -956,6 +1058,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    // mark inactive early so pending timers/callbacks skip using `ref`
+    _isActive = false;
     _autoPlayTimer?.cancel();
     _progressTimer?.cancel();
     _videoPlayerController.removeListener(_checkForSkipSegments);
@@ -970,196 +1074,212 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.animeTitle,
-              style: GoogleFonts.plusJakartaSans(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.episodeTitle,
-                        style: GoogleFonts.plusJakartaSans(
-                          color: const Color(0xFFA7A7A7),
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (widget.episodes != null)
-                        Text(
-                          'Episode ${widget.currentEpisodeIndex + 1} of ${widget.episodes!.length}',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: const Color(0xFF888888),
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvokedWithResult,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              debugPrint(
+                'VideoPlayerScreen: Back button pressed - pausing video and cleaning up',
+              );
+              _handleBackNavigation();
+            },
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.animeTitle,
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                if (_selectedServer != null) ...[
-                  Container(
-                    margin: const EdgeInsets.only(left: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF5B13EC),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${_selectedServer!.serverName} (${_selectedType.toUpperCase()})',
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.episodeTitle,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: const Color(0xFFA7A7A7),
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (widget.episodes != null)
+                          Text(
+                            'Episode ${widget.currentEpisodeIndex + 1} of ${widget.episodes!.length}',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: const Color(0xFF888888),
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                ],
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          // Episode Navigation
-          if (widget.episodes != null) ...[
-            IconButton(
-              icon: Icon(
-                Icons.skip_previous,
-                color: widget.currentEpisodeIndex > 0 ? Colors.white : Colors.grey,
-              ),
-              onPressed: widget.currentEpisodeIndex > 0 ? _playPreviousEpisode : null,
-              tooltip: 'Previous Episode',
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.skip_next,
-                color: widget.episodes != null && widget.currentEpisodeIndex < widget.episodes!.length - 1 
-                    ? Colors.white 
-                    : Colors.grey,
-              ),
-              onPressed: widget.episodes != null && widget.currentEpisodeIndex < widget.episodes!.length - 1 
-                  ? _playNextEpisode 
-                  : null,
-              tooltip: 'Next Episode',
-            ),
-          ],
-          IconButton(
-            icon: const Icon(Icons.tune, color: Colors.white),
-            onPressed: () {
-              _showAdvancedSettings();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
-              _showServerSelectionDialog();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.fullscreen, color: Colors.white),
-            onPressed: () {
-              if (_chewieController != null) {
-                _chewieController!.enterFullScreen();
-              }
-            },
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF5B13EC),
-              ),
-            )
-          : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 64,
+                  if (_selectedServer != null) ...[
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _errorMessage!,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5B13EC),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${_selectedServer!.serverName} (${_selectedType.toUpperCase()})',
                         style: GoogleFonts.plusJakartaSans(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _isLoading = true;
-                            _errorMessage = null;
-                          });
-                          _initializePlayer();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5B13EC),
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                )
-              : _chewieController != null
-                  ? Stack(
-                      children: [
-                        GestureDetector(
-                          onDoubleTapDown: (details) {
-                            final screenWidth = MediaQuery.of(context).size.width;
-                            final tapPosition = details.globalPosition.dx;
-                            
-                            if (tapPosition < screenWidth / 2) {
-                              // Double tap left side - skip backward 10 seconds
-                              _skipBackward();
-                            } else {
-                              // Double tap right side - skip forward 10 seconds
-                              _skipForward();
-                            }
-                          },
-                          child: Chewie(controller: _chewieController!),
-                        ),
-                        // Episode Navigation Overlay
-                        if (widget.episodes != null)
-                          _buildEpisodeNavigationOverlay(),
-                      ],
-                    )
-                  : const Center(
-                      child: Text(
-                        'Video player not initialized',
-                        style: TextStyle(color: Colors.white),
                       ),
                     ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            // Episode Navigation
+            if (widget.episodes != null) ...[
+              IconButton(
+                icon: Icon(
+                  Icons.skip_previous,
+                  color: widget.currentEpisodeIndex > 0
+                      ? Colors.white
+                      : Colors.grey,
+                ),
+                onPressed: widget.currentEpisodeIndex > 0
+                    ? _playPreviousEpisode
+                    : null,
+                tooltip: 'Previous Episode',
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.skip_next,
+                  color:
+                      widget.episodes != null &&
+                          widget.currentEpisodeIndex <
+                              widget.episodes!.length - 1
+                      ? Colors.white
+                      : Colors.grey,
+                ),
+                onPressed:
+                    widget.episodes != null &&
+                        widget.currentEpisodeIndex < widget.episodes!.length - 1
+                    ? _playNextEpisode
+                    : null,
+                tooltip: 'Next Episode',
+              ),
+            ],
+            IconButton(
+              icon: const Icon(Icons.tune, color: Colors.white),
+              onPressed: () {
+                _showAdvancedSettings();
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings, color: Colors.white),
+              onPressed: () {
+                _showServerSelectionDialog();
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.fullscreen, color: Colors.white),
+              onPressed: () {
+                if (_chewieController != null) {
+                  _chewieController!.enterFullScreen();
+                }
+              },
+            ),
+          ],
+        ),
+        body: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF5B13EC)),
+              )
+            : _errorMessage != null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 64,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMessage!,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isLoading = true;
+                          _errorMessage = null;
+                        });
+                        _initializePlayer();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5B13EC),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            : _chewieController != null
+            ? Stack(
+                children: [
+                  GestureDetector(
+                    onDoubleTapDown: (details) {
+                      final screenWidth = MediaQuery.of(context).size.width;
+                      final tapPosition = details.globalPosition.dx;
+
+                      if (tapPosition < screenWidth / 2) {
+                        // Double tap left side - skip backward 10 seconds
+                        _skipBackward();
+                      } else {
+                        // Double tap right side - skip forward 10 seconds
+                        _skipForward();
+                      }
+                    },
+                    child: Chewie(controller: _chewieController!),
+                  ),
+                  // Episode Navigation Overlay
+                  if (widget.episodes != null) _buildEpisodeNavigationOverlay(),
+                ],
+              )
+            : const Center(
+                child: Text(
+                  'Video player not initialized',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+      ),
     );
   }
 
@@ -1174,7 +1294,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         final position = value.position;
         final duration = value.duration;
         final remainingTime = duration - position;
-        
+
         // Show overlay when there's less than 30 seconds remaining
         if (remainingTime.inSeconds > 30) {
           // Hide overlay if not in the last 30 seconds
@@ -1200,8 +1320,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
 
         // Set up auto-play timer if there's a next episode
-        if (widget.currentEpisodeIndex < widget.episodes!.length - 1 && 
-            countdown > 0 && countdown <= 30) {
+        if (widget.currentEpisodeIndex < widget.episodes!.length - 1 &&
+            countdown > 0 &&
+            countdown <= 30) {
           _autoPlayTimer?.cancel();
           _autoPlayTimer = Timer(Duration(seconds: countdown), () {
             if (mounted && _showNextEpisodeOverlay) {
@@ -1253,7 +1374,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (widget.currentEpisodeIndex < widget.episodes!.length - 1) ...[
+                  if (widget.currentEpisodeIndex <
+                      widget.episodes!.length - 1) ...[
                     Text(
                       'Episode ${widget.episodes![widget.currentEpisodeIndex + 1].episodeNo}',
                       style: GoogleFonts.plusJakartaSans(
@@ -1264,8 +1386,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.episodes![widget.currentEpisodeIndex + 1].title ?? 
-                      'Episode ${widget.episodes![widget.currentEpisodeIndex + 1].episodeNo}',
+                      widget.episodes![widget.currentEpisodeIndex + 1].title ??
+                          'Episode ${widget.episodes![widget.currentEpisodeIndex + 1].episodeNo}',
                       style: GoogleFonts.plusJakartaSans(
                         color: Colors.white70,
                         fontSize: 12,
@@ -1278,7 +1400,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     // Countdown timer
                     if (countdown > 0 && countdown <= 30)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF5B13EC).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
@@ -1304,7 +1429,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF5B13EC),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -1334,13 +1462,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.grey,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                            ),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12),
                           ),
                         ),
                       ],
@@ -1363,7 +1492,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-
   void _setupWatchProgressTracking() {
     // Start a timer to save progress every 10 seconds
     _progressTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
@@ -1374,15 +1502,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   void _saveWatchProgress() {
+    if (!_isActive || !mounted) return;
     if (!_videoPlayerController.value.isInitialized) return;
-    
+
     final currentPosition = _videoPlayerController.value.position;
     final duration = _videoPlayerController.value.duration;
-    
+
     // Only save if position has changed significantly (more than 5 seconds)
     if ((currentPosition - _lastSavedPosition).inSeconds.abs() >= 5) {
       final progressNotifier = ref.read(watchProgressNotifierProvider.notifier);
-      
+
       progressNotifier.updateProgressFromVideo(
         animeId: widget.animeId,
         episodeId: widget.episodeId,
@@ -1390,21 +1519,22 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         episodeDuration: duration,
         markAsCompleted: currentPosition.inSeconds >= duration.inSeconds * 0.9,
       );
-      
+
       _lastSavedPosition = currentPosition;
     }
   }
 
   void _saveFinalProgress() {
+    if (!_isActive || !mounted) return;
     if (!_videoPlayerController.value.isInitialized) return;
-    
+
     final currentPosition = _videoPlayerController.value.position;
     final duration = _videoPlayerController.value.duration;
     final progressNotifier = ref.read(watchProgressNotifierProvider.notifier);
-    
+
     // Mark as completed if watched more than 90%
     final isCompleted = currentPosition.inSeconds >= duration.inSeconds * 0.9;
-    
+
     progressNotifier.updateProgressFromVideo(
       animeId: widget.animeId,
       episodeId: widget.episodeId,

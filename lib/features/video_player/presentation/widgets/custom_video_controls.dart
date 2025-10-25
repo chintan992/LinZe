@@ -12,6 +12,7 @@ class CustomVideoControls extends StatefulWidget {
   final VoidCallback onSkipForward;
   final VoidCallback onPipPressed;
   final VoidCallback onChapterPressed;
+  final VoidCallback? onServerPressed; // Optional callback for server selection
 
   const CustomVideoControls({
     super.key,
@@ -22,6 +23,7 @@ class CustomVideoControls extends StatefulWidget {
     required this.onSkipForward,
     required this.onPipPressed,
     required this.onChapterPressed,
+    this.onServerPressed, // Optional parameter
   });
 
   @override
@@ -102,6 +104,12 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
             onPressed: widget.onPipPressed,
             icon: const Icon(Icons.picture_in_picture_alt_outlined, color: Colors.white, size: 28),
           ),
+          // Server selection button (if callback provided)
+          if (widget.onServerPressed != null)
+            IconButton(
+              onPressed: widget.onServerPressed,
+              icon: const Icon(Icons.dns, color: Colors.white, size: 28),
+            ),
           // Settings button
           IconButton(
             onPressed: widget.onSettingsPressed,

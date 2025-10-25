@@ -1025,6 +1025,232 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     });
   }
 
+  void _showServerSelectionDialog() {
+    String tempSelectedType = _selectedType;
+    Server? tempSelectedServer = _selectedServer;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF2C2C2E),
+              title: Text(
+                'Select Server & Audio',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Audio Type Selection
+                    Text(
+                      'Audio Type',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildAudioTypeButton(
+                            'sub',
+                            'Sub',
+                            tempSelectedType,
+                            (type) {
+                              setDialogState(() {
+                                tempSelectedType = type;
+                                // Reset server selection when audio type changes
+                                final availableServersForType =
+                                    _availableServers
+                                        .where(
+                                          (server) =>
+                                              server.type == tempSelectedType,
+                                        )
+                                        .toList();
+                                tempSelectedServer =
+                                    availableServersForType.isNotEmpty
+                                    ? availableServersForType.first
+                                    : null;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildAudioTypeButton(
+                            'dub',
+                            'Dub',
+                            tempSelectedType,
+                            (type) {
+                              setDialogState(() {
+                                tempSelectedType = type;
+                                // Reset server selection when audio type changes
+                                final availableServersForType =
+                                    _availableServers
+                                        .where(
+                                          (server) =>
+                                              server.type == tempSelectedType,
+                                        )
+                                        .toList();
+                                tempSelectedServer =
+                                    availableServersForType.isNotEmpty
+                                    ? availableServersForType.first
+                                    : null;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Server Selection
+                    Text(
+                      'Available Servers (${tempSelectedType.toUpperCase()})',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: _availableServers
+                              .where(
+                                (server) => server.type == tempSelectedType,
+                              )
+                              .map(
+                                (server) => _buildServerButton(
+                                  server,
+                                  tempSelectedServer?.serverName ==
+                                      server.serverName,
+                                  () {
+                                    setDialogState(() {
+                                      tempSelectedServer = server;
+                                    });
+                                  },
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFF8E8E93),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    if (tempSelectedServer != null) {
+                      _switchServer(tempSelectedServer!, tempSelectedType);
+                    }
+                  },
+                  child: Text(
+                    'Apply',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFF5B13EC),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAudioTypeButton(
+    String type,
+    String label,
+    String selectedType,
+    Function(String) onTap,
+  ) {
+    final isSelected = selectedType == type;
+    return GestureDetector(
+      onTap: () => onTap(type),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF5B13EC) : const Color(0xFF3A3A3C),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServerButton(
+    Server server,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF5B13EC)
+                : const Color(0xFF3A3A3C),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.dns, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  server.serverName ?? 'Unknown Server',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (isSelected) Icon(Icons.check, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _switchServer(Server server, String type) async {
     setState(() {
       _isLoading = true;
@@ -1390,6 +1616,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       onSkipForward: _skipForward,
                       onPipPressed: _enterPipMode,
                       onChapterPressed: _toggleChapterSelector,
+                      onServerPressed: _showServerSelectionDialog, // Server selection dialog
                     ),
 
                   // Chapter selector overlay
@@ -1530,6 +1757,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     onSkipForward: _skipForward,
                     onPipPressed: _enterPipMode,
                     onChapterPressed: _toggleChapterSelector,
+                    onServerPressed: _showServerSelectionDialog, // Server selection dialog
                   ),
 
                 // Chapter selector overlay

@@ -28,30 +28,31 @@ class AniListCharacter {
   factory AniListCharacter.fromJson(Map<String, dynamic> json) {
     return AniListCharacter(
       id: json['id'] as int,
-      name: json['name'] != null 
-          ? AniListCharacterName.fromJson(json['name']) 
+      name: json['name'] != null
+          ? AniListCharacterName.fromJson(json['name'])
           : null,
       image: json['image']?['large'] as String?,
       description: json['description'] as String?,
       gender: json['gender'] as String?,
-      dateOfBirth: json['dateOfBirth']?['year'] != null && 
-                   json['dateOfBirth']?['month'] != null && 
-                   json['dateOfBirth']?['day'] != null
+      dateOfBirth:
+          json['dateOfBirth']?['year'] != null &&
+              json['dateOfBirth']?['month'] != null &&
+              json['dateOfBirth']?['day'] != null
           ? '${json['dateOfBirth']['year']}-${json['dateOfBirth']['month']}-${json['dateOfBirth']['day']}'
           : null,
       age: json['age'] as int?,
       bloodType: json['bloodType'] as String?,
       isFavourite: json['isFavourite'] as bool?,
       siteUrl: json['siteUrl'] as String?,
-      media: json['media']?['edges'] != null 
+      media: json['media']?['edges'] != null
           ? (json['media']['edges'] as List<dynamic>)
-              .map((edge) => AniListCharacterMedia.fromJson(edge))
-              .toList()
+                .map((edge) => AniListCharacterMedia.fromJson(edge))
+                .toList()
           : null,
     );
   }
 
-  String get displayName => 
+  String get displayName =>
       name?.english ?? name?.full ?? name?.native ?? 'Unknown Character';
 }
 
@@ -101,15 +102,18 @@ class AniListCharacterMedia {
   });
 
   factory AniListCharacterMedia.fromJson(Map<String, dynamic> json) {
-    final node = json['node'] as Map<String, dynamic>?;
+    final nodeRaw = json['node'];
+    final Map<String, dynamic>? node = nodeRaw is Map<String, dynamic>
+        ? nodeRaw
+        : null;
     return AniListCharacterMedia(
       characterRole: json['characterRole'] as String?,
       mediaId: node?['id'] as int? ?? 0,
       mediaTitle: node?['title']?['english'] ?? node?['title']?['romaji'],
-      voiceActors: json['voiceActors'] != null 
+      voiceActors: json['voiceActors'] != null
           ? (json['voiceActors'] as List<dynamic>)
-              .map((actor) => AniListVoiceActor.fromJson(actor))
-              .toList()
+                .map((actor) => AniListVoiceActor.fromJson(actor))
+                .toList()
           : null,
     );
   }
@@ -131,15 +135,15 @@ class AniListVoiceActor {
   factory AniListVoiceActor.fromJson(Map<String, dynamic> json) {
     return AniListVoiceActor(
       id: json['id'] as int,
-      name: json['name'] != null 
-          ? AniListVoiceActorName.fromJson(json['name']) 
+      name: json['name'] != null
+          ? AniListVoiceActorName.fromJson(json['name'])
           : null,
       language: json['language'] as String?,
       image: json['image']?['large'] as String?,
     );
   }
 
-  String get displayName => 
+  String get displayName =>
       name?.full ?? name?.native ?? name?.english ?? 'Unknown Actor';
 }
 

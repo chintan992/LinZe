@@ -75,14 +75,28 @@ class UserAnimeStats {
   }
 
   factory UserAnimeStats.fromAniListUser(Map<String, dynamic> user) {
-    final animeStats = user['statistics']?['anime'];
+    final dynamic animeStats = user['statistics']?['anime'];
+
+    int totalWatched = 0;
+    int totalEpisodes = 0;
+    double averageScore = 0.0;
+
+    if (animeStats is Map<String, dynamic>) {
+      totalWatched = (animeStats['count'] as num?)?.toInt() ?? 0;
+      totalEpisodes = (animeStats['episodesWatched'] as num?)?.toInt() ?? 0;
+      averageScore = (animeStats['meanScore'] as num?)?.toDouble() ?? 0.0;
+    } else if (animeStats is num) {
+      // Some responses might return a numeric summary instead of a map
+      totalWatched = animeStats.toInt();
+    }
+
     return UserAnimeStats(
-      totalWatched: animeStats?['count'] ?? 0,
-      totalEpisodes: animeStats?['episodesWatched'] ?? 0,
+      totalWatched: totalWatched,
+      totalEpisodes: totalEpisodes,
       watchingCount: 0, // Would need to fetch from user's list
       completedCount: 0, // Would need to fetch from user's list
       planningCount: 0, // Would need to fetch from user's list
-      averageScore: (animeStats?['meanScore'] ?? 0).toDouble(),
+      averageScore: averageScore,
     );
   }
 }

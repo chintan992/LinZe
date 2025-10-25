@@ -6,20 +6,22 @@ import 'package:linze/core/services/anilist_auth_service.dart';
 import 'package:linze/features/auth/presentation/screen/login_signup_screen.dart';
 import 'package:linze/features/home/presentation/screen/main_screen.dart';
 import 'package:linze/features/welcome/welcome_screen.dart';
+import 'package:linze/features/video_player/presentation/services/download_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Load environment variables
   await dotenv.load(fileName: ".env");
-  
+
   // Initialize AniList auth service
   final authService = AniListAuthService();
   await authService.initialize();
-  
-  runApp(const ProviderScope(
-    child: AnimeStreamingApp(),
-  ));
+
+  // Initialize download service
+  await DownloadService.initialize();
+
+  runApp(const ProviderScope(child: AnimeStreamingApp()));
 }
 
 class AnimeStreamingApp extends StatelessWidget {
@@ -78,9 +80,7 @@ class _AppInitializerState extends State<AppInitializer> {
       } else {
         // Returning user but not logged in, go to login/signup
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const LoginSignupScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const LoginSignupScreen()),
         );
       }
     }
@@ -89,11 +89,7 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF5B13EC),
-        ),
-      ),
+      body: Center(child: CircularProgressIndicator(color: Color(0xFF5B13EC))),
     );
   }
 }

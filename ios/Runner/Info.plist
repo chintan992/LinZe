@@ -45,6 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>This app needs access to music library to provide offline functionality.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photo library to download media content.</string>
 	<!-- Deep link URL scheme for AniList OAuth -->
 	<key>CFBundleURLTypes</key>
 	<array>

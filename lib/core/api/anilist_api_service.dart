@@ -27,15 +27,21 @@ class AniListApiService {
         if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
         ...?headers,
       },
-      body: jsonEncode({
-        'query': query,
-        'variables': variables,
-      }),
+      body: jsonEncode({'query': query, 'variables': variables}),
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map<String, dynamic>) {
+        throw AniListApiException(
+          'Unexpected response format: ${decoded.runtimeType}',
+          response.statusCode,
+        );
+      }
+
+      final Map<String, dynamic> data = decoded;
+
       if (data['errors'] != null) {
         throw AniListApiException(
           'GraphQL errors: ${data['errors']}',
@@ -43,11 +49,21 @@ class AniListApiService {
         );
       }
 
+      final payload = data['data'];
+
       if (fromJson != null) {
-        return fromJson(data['data'] as Map<String, dynamic>);
+        if (payload is Map<String, dynamic>) {
+          return fromJson(payload);
+        } else {
+          throw AniListApiException(
+            'Unexpected payload type for fromJson: ${payload?.runtimeType}',
+            response.statusCode,
+          );
+        }
       }
-      
-      return data['data'] as T;
+
+      // If caller didn't supply a fromJson, return the raw payload (could be Map or other types)
+      return payload as T;
     } else {
       throw AniListApiException(
         'HTTP ${response.statusCode}: ${response.body}',
@@ -89,10 +105,7 @@ class AniListApiService {
       }
     ''';
 
-    final data = await _makeGraphQLRequest(
-      query,
-      {},
-    );
+    final data = await _makeGraphQLRequest(query, {});
 
     return data['Viewer'];
   }
@@ -251,7 +264,9 @@ class AniListApiService {
     return _makeGraphQLRequest(
       query,
       {'id': mediaId},
-      headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
+      headers: accessToken != null
+          ? {'Authorization': 'Bearer $accessToken'}
+          : null,
       fromJson: (data) => AniListMedia.fromJson(data['Media']),
     );
   }
@@ -330,7 +345,9 @@ class AniListApiService {
     final data = await _makeGraphQLRequest(
       query,
       variables,
-      headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
+      headers: accessToken != null
+          ? {'Authorization': 'Bearer $accessToken'}
+          : null,
     );
 
     final mediaList = (data['Page']['media'] as List<dynamic>)
@@ -401,7 +418,9 @@ class AniListApiService {
     final data = await _makeGraphQLRequest(
       query,
       variables,
-      headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
+      headers: accessToken != null
+          ? {'Authorization': 'Bearer $accessToken'}
+          : null,
     );
 
     final mediaList = (data['Page']['media'] as List<dynamic>)
@@ -472,7 +491,9 @@ class AniListApiService {
     final data = await _makeGraphQLRequest(
       query,
       variables,
-      headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
+      headers: accessToken != null
+          ? {'Authorization': 'Bearer $accessToken'}
+          : null,
     );
 
     final mediaList = (data['Page']['media'] as List<dynamic>)
@@ -547,7 +568,9 @@ class AniListApiService {
     final data = await _makeGraphQLRequest(
       query,
       variables,
-      headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
+      headers: accessToken != null
+          ? {'Authorization': 'Bearer $accessToken'}
+          : null,
     );
 
     final mediaList = (data['Page']['media'] as List<dynamic>)
@@ -638,8 +661,11 @@ class AniListApiService {
     return _makeGraphQLRequest(
       query,
       variables,
-      headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
-      fromJson: (data) => AniListMediaListCollection.fromJson(data['MediaListCollection']),
+      headers: accessToken != null
+          ? {'Authorization': 'Bearer $accessToken'}
+          : null,
+      fromJson: (data) =>
+          AniListMediaListCollection.fromJson(data['MediaListCollection']),
     );
   }
 
@@ -682,9 +708,7 @@ class AniListApiService {
       }
     ''';
 
-    final variables = <String, dynamic>{
-      'mediaId': mediaId,
-    };
+    final variables = <String, dynamic>{'mediaId': mediaId};
 
     if (status != null) variables['status'] = status.name.toUpperCase();
     if (score != null) variables['score'] = score;
@@ -694,7 +718,9 @@ class AniListApiService {
     if (priority != null) variables['priority'] = priority;
     if (private != null) variables['private'] = private;
     if (notes != null) variables['notes'] = notes;
-    if (hiddenFromStatusLists != null) variables['hiddenFromStatusLists'] = hiddenFromStatusLists;
+    if (hiddenFromStatusLists != null) {
+      variables['hiddenFromStatusLists'] = hiddenFromStatusLists;
+    }
 
     return _makeGraphQLRequest(
       query,
@@ -810,17 +836,16 @@ class AniListApiService {
       }
     ''';
 
-    final variables = <String, dynamic>{
-      'page': page,
-      'perPage': perPage,
-    };
+    final variables = <String, dynamic>{'page': page, 'perPage': perPage};
 
     if (type != null) variables['type'] = type.name.toUpperCase();
 
     final data = await _makeGraphQLRequest(
       query,
       variables,
-      headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
+      headers: accessToken != null
+          ? {'Authorization': 'Bearer $accessToken'}
+          : null,
     );
 
     final recommendations = (data['Page']['recommendations'] as List<dynamic>)
@@ -833,6 +858,7 @@ class AniListApiService {
   void dispose() {
     _client.close();
   }
+
   // Mutations
   Future<AniListMediaList?> saveMediaToList({
     required int mediaId,
@@ -852,15 +878,12 @@ class AniListApiService {
       }
     ''';
 
-    final data = await _makeGraphQLRequest(
-      mutation,
-      {
-        'mediaId': mediaId,
-        'status': status?.name.toUpperCase(),
-        'score': score,
-        'progress': progress,
-      },
-    );
+    final data = await _makeGraphQLRequest(mutation, {
+      'mediaId': mediaId,
+      'status': status?.name.toUpperCase(),
+      'score': score,
+      'progress': progress,
+    });
 
     if (data['SaveMediaListEntry'] != null) {
       return AniListMediaList.fromJson(data['SaveMediaListEntry']);

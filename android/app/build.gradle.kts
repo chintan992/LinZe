@@ -14,6 +14,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+        packagingOptions {
+            exclude("META-INF/DEPENDENCIES")
+            exclude("META-INF/LICENSE")
+            exclude("META-INF/LICENSE.txt")
+            exclude("META-INF/license.txt")
+            exclude("META-INF/NOTICE")
+            exclude("META-INF/NOTICE.txt")
+            exclude("META-INF/notice.txt")
+            exclude("META-INF/*.kotlin_module")
+            exclude("META-INF/proguard/androidx-annotations.pro")
+            exclude("META-INF/com.android.tools/**")
+            exclude("META-INF/services/**")
+        }
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()

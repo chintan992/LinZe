@@ -34,37 +34,41 @@ class AniListStaff {
   factory AniListStaff.fromJson(Map<String, dynamic> json) {
     return AniListStaff(
       id: json['id'] as int,
-      name: json['name'] != null 
-          ? AniListStaffName.fromJson(json['name']) 
+      name: json['name'] != null
+          ? AniListStaffName.fromJson(json['name'])
           : null,
       language: json['language'] as String?,
       image: json['image']?['large'] as String?,
       description: json['description'] as String?,
-      primaryOccupations: (json['primaryOccupations'] as List<dynamic>?)?.join(', '),
+      primaryOccupations: (json['primaryOccupations'] as List<dynamic>?)?.join(
+        ', ',
+      ),
       gender: json['gender'] as String?,
-      dateOfBirth: json['dateOfBirth']?['year'] != null && 
-                   json['dateOfBirth']?['month'] != null && 
-                   json['dateOfBirth']?['day'] != null
+      dateOfBirth:
+          json['dateOfBirth']?['year'] != null &&
+              json['dateOfBirth']?['month'] != null &&
+              json['dateOfBirth']?['day'] != null
           ? '${json['dateOfBirth']['year']}-${json['dateOfBirth']['month']}-${json['dateOfBirth']['day']}'
           : null,
-      dateOfDeath: json['dateOfDeath']?['year'] != null && 
-                   json['dateOfDeath']?['month'] != null && 
-                   json['dateOfDeath']?['day'] != null
+      dateOfDeath:
+          json['dateOfDeath']?['year'] != null &&
+              json['dateOfDeath']?['month'] != null &&
+              json['dateOfDeath']?['day'] != null
           ? '${json['dateOfDeath']['year']}-${json['dateOfDeath']['month']}-${json['dateOfDeath']['day']}'
           : null,
       age: json['age'] as int?,
       bloodType: json['bloodType'] as String?,
       isFavourite: json['isFavourite'] as bool?,
       siteUrl: json['siteUrl'] as String?,
-      staffMedia: json['staffMedia']?['edges'] != null 
+      staffMedia: json['staffMedia']?['edges'] != null
           ? (json['staffMedia']['edges'] as List<dynamic>)
-              .map((edge) => AniListStaffMedia.fromJson(edge))
-              .toList()
+                .map((edge) => AniListStaffMedia.fromJson(edge))
+                .toList()
           : null,
     );
   }
 
-  String get displayName => 
+  String get displayName =>
       name?.full ?? name?.native ?? name?.english ?? 'Unknown Staff';
 }
 
@@ -109,7 +113,10 @@ class AniListStaffMedia {
   });
 
   factory AniListStaffMedia.fromJson(Map<String, dynamic> json) {
-    final node = json['node'] as Map<String, dynamic>?;
+    final nodeRaw = json['node'];
+    final Map<String, dynamic>? node = nodeRaw is Map<String, dynamic>
+        ? nodeRaw
+        : null;
     return AniListStaffMedia(
       staffRole: json['staffRole'] as String?,
       mediaId: node?['id'] as int? ?? 0,

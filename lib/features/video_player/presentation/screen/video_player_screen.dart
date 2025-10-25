@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:chewie/chewie.dart';
@@ -104,6 +105,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    // Reset system UI settings when disposing
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    
     _enhancedController?.dispose();
     _autoPlayTimer?.cancel();
     super.dispose();
@@ -183,6 +191,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         _chewieController = ChewieController(
           videoPlayerController: _videoPlayerController,
+          showControls: false,
           autoPlay: true,
           looping: false,
           allowFullScreen: true,
@@ -221,6 +230,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         setState(() {
           _isLoading = false;
+          // Ensure custom controls are visible after switching servers
+          // so the user can interact with the paused/new video immediately.
+          _showControls = true;
         });
       } else {
         setState(() {
@@ -538,6 +550,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         _chewieController = ChewieController(
           videoPlayerController: _videoPlayerController,
+          showControls: false,
           autoPlay: true,
           looping: false,
           allowFullScreen: true,
@@ -569,6 +582,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         setState(() {
           _isLoading = false;
+          // Ensure custom controls are visible after switching servers
+          // so the user can interact with the paused/new video immediately.
+          _showControls = true;
         });
 
         // Show success message
@@ -611,9 +627,41 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     });
   }
 
-  void _enterFullscreen() {
-    if (_chewieController != null) {
-      _chewieController!.enterFullScreen();
+  // Fullscreen state management
+  bool _isFullscreen = false;
+
+  void _toggleFullscreen() {
+    setState(() {
+      _isFullscreen = !_isFullscreen;
+    });
+
+    if (_isFullscreen) {
+      // Enter fullscreen mode
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      // Exit fullscreen mode
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+  }
+
+  void _exitFullscreen() {
+    if (_isFullscreen) {
+      setState(() {
+        _isFullscreen = false;
+      });
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
     }
   }
 
@@ -1029,6 +1077,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         _chewieController = ChewieController(
           videoPlayerController: _videoPlayerController,
+          showControls: false,
           autoPlay: false, // Don't auto-play when switching servers
           looping: false,
           allowFullScreen: true,
@@ -1052,6 +1101,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         setState(() {
           _isLoading = false;
+          // Ensure custom controls are visible after switching servers
+          // so the user can interact with the paused/new video immediately.
+          _showControls = true;
         });
 
         // Show success message
@@ -1091,414 +1143,189 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     }
   }
 
-  void _showServerSelectionDialog() {
-    String tempSelectedType = _selectedType;
-    Server? tempSelectedServer = _selectedServer;
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF2C2C2E),
-              title: Text(
-                'Select Server & Audio',
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 400,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Audio Type Selection
-                    Text(
-                      'Audio Type',
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildAudioTypeButton(
-                            'sub',
-                            'Sub',
-                            tempSelectedType,
-                            (type) {
-                              setDialogState(() {
-                                tempSelectedType = type;
-                                // Reset server selection when audio type changes
-                                final availableServersForType =
-                                    _availableServers
-                                        .where(
-                                          (server) =>
-                                              server.type == tempSelectedType,
-                                        )
-                                        .toList();
-                                tempSelectedServer =
-                                    availableServersForType.isNotEmpty
-                                    ? availableServersForType.first
-                                    : null;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildAudioTypeButton(
-                            'dub',
-                            'Dub',
-                            tempSelectedType,
-                            (type) {
-                              setDialogState(() {
-                                tempSelectedType = type;
-                                // Reset server selection when audio type changes
-                                final availableServersForType =
-                                    _availableServers
-                                        .where(
-                                          (server) =>
-                                              server.type == tempSelectedType,
-                                        )
-                                        .toList();
-                                tempSelectedServer =
-                                    availableServersForType.isNotEmpty
-                                    ? availableServersForType.first
-                                    : null;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
 
-                    // Server Selection
-                    Text(
-                      'Available Servers (${tempSelectedType.toUpperCase()})',
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: _availableServers
-                              .where(
-                                (server) => server.type == tempSelectedType,
-                              )
-                              .map(
-                                (server) => _buildServerButton(
-                                  server,
-                                  tempSelectedServer?.serverName ==
-                                      server.serverName,
-                                  () {
-                                    setDialogState(() {
-                                      tempSelectedServer = server;
-                                    });
-                                  },
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(
-                    'Cancel',
-                    style: GoogleFonts.plusJakartaSans(
-                      color: const Color(0xFF8E8E93),
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    if (tempSelectedServer != null) {
-                      _switchServer(tempSelectedServer!, tempSelectedType);
-                    }
-                  },
-                  child: Text(
-                    'Apply',
-                    style: GoogleFonts.plusJakartaSans(
-                      color: const Color(0xFF5B13EC),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
-  Widget _buildAudioTypeButton(
-    String type,
-    String label,
-    String selectedType,
-    Function(String) onTap,
-  ) {
-    final isSelected = selectedType == type;
-    return GestureDetector(
-      onTap: () => onTap(type),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5B13EC) : const Color(0xFF3A3A3C),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildServerButton(
-    Server server,
-    bool isSelected,
-    VoidCallback onTap,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF5B13EC)
-                : const Color(0xFF3A3A3C),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.dns, color: Colors.white, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  server.serverName ?? 'Unknown Server',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (isSelected) Icon(Icons.check, color: Colors.white, size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: _onPopInvokedWithResult,
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              debugPrint(
-                'VideoPlayerScreen: Back button pressed - pausing video and cleaning up',
-              );
-              Navigator.pop(context);
-            },
-          ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.animeTitle,
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+      child: _isFullscreen 
+          ? _buildFullscreenPlayer()  // Fullscreen view
+          : Scaffold(  // Normal view
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    debugPrint(
+                      'VideoPlayerScreen: Back button pressed - pausing video and cleaning up',
+                    );
+                    Navigator.pop(context);
+                  },
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Row(
-                children: [
-                  // Using Flexible instead of Expanded to allow row items to fit content
-                  Flexible(
-                    fit: FlexFit.loose,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.animeTitle,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Row(
                       children: [
-                        Text(
-                          widget.episodeTitle,
-                          style: GoogleFonts.plusJakartaSans(
-                            color: const Color(0xFFA7A7A7),
-                            fontSize: 14,
+                        // Using Flexible instead of Expanded to allow row items to fit content
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.episodeTitle,
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: const Color(0xFFA7A7A7),
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (widget.episodes != null)
+                                Text(
+                                  'Episode ${widget.currentEpisodeIndex + 1} of ${widget.episodes!.length}',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: const Color(0xFF888888),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (widget.episodes != null)
-                          Text(
-                            'Episode ${widget.currentEpisodeIndex + 1} of ${widget.episodes!.length}',
-                            style: GoogleFonts.plusJakartaSans(
-                              color: const Color(0xFF888888),
-                              fontSize: 12,
+                        if (_selectedServer != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF5B13EC),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${_selectedServer!.serverName} (${_selectedType.toUpperCase()})',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
+                        ],
                       ],
                     ),
-                  ),
-                  if (_selectedServer != null) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+                  ],
+                ),
+                actions: [
+                  // Episode Navigation
+                  if (widget.episodes != null) ...[
+                    IconButton(
+                      icon: Icon(
+                        Icons.skip_previous,
+                        color: widget.currentEpisodeIndex > 0
+                            ? Colors.white
+                            : Colors.grey,
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF5B13EC),
-                        borderRadius: BorderRadius.circular(12),
+                      onPressed: widget.currentEpisodeIndex > 0
+                          ? _playPreviousEpisode
+                          : null,
+                      tooltip: 'Previous Episode',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.skip_next,
+                        color:
+                            widget.episodes != null &&
+                                widget.currentEpisodeIndex <
+                                    widget.episodes!.length - 1
+                            ? Colors.white
+                            : Colors.grey,
                       ),
-                      child: Text(
-                        '${_selectedServer!.serverName} (${_selectedType.toUpperCase()})',
-                        style: GoogleFonts.plusJakartaSans(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      onPressed:
+                          widget.episodes != null &&
+                              widget.currentEpisodeIndex < widget.episodes!.length - 1
+                          ? _playNextEpisode
+                          : null,
+                      tooltip: 'Next Episode',
                     ),
                   ],
+                  IconButton(
+                    icon: const Icon(Icons.tune, color: Colors.white),
+                    onPressed: () {
+                      _showAdvancedSettings();
+                    },
+                  ),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _downloadStatus == DownloadTaskStatus.running
+                              ? Icons.downloading
+                              : _downloadStatus == DownloadTaskStatus.complete
+                              ? Icons.offline_pin
+                              : Icons.download,
+                          color: Colors.white,
+                        ),
+                        onPressed:
+                            _downloadStatus == DownloadTaskStatus.running &&
+                                _downloadTaskId != null
+                            ? () => _cancelDownload(_downloadTaskId!)
+                            : _downloadVideo,
+                        tooltip: _downloadStatus == DownloadTaskStatus.running
+                            ? 'Cancel Download'
+                            : 'Download for offline viewing',
+                      ),
+                      if (_downloadStatus == DownloadTaskStatus.running)
+                        CircularProgressIndicator(
+                          value: _downloadProgress / 100,
+                          strokeWidth: 2,
+                          backgroundColor: Colors.white24,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      if (_downloadStatus == DownloadTaskStatus.running)
+                        Positioned(
+                          bottom: 8,
+                          child: Text(
+                            '${_downloadProgress.toInt()}%',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _isFullscreen 
+                          ? Icons.fullscreen_exit 
+                          : Icons.fullscreen, 
+                      color: Colors.white
+                    ),
+                    onPressed: _toggleFullscreen,
+                  ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            // Episode Navigation
-            if (widget.episodes != null) ...[
-              IconButton(
-                icon: Icon(
-                  Icons.skip_previous,
-                  color: widget.currentEpisodeIndex > 0
-                      ? Colors.white
-                      : Colors.grey,
-                ),
-                onPressed: widget.currentEpisodeIndex > 0
-                    ? _playPreviousEpisode
-                    : null,
-                tooltip: 'Previous Episode',
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.skip_next,
-                  color:
-                      widget.episodes != null &&
-                          widget.currentEpisodeIndex <
-                              widget.episodes!.length - 1
-                      ? Colors.white
-                      : Colors.grey,
-                ),
-                onPressed:
-                    widget.episodes != null &&
-                        widget.currentEpisodeIndex < widget.episodes!.length - 1
-                    ? _playNextEpisode
-                    : null,
-                tooltip: 'Next Episode',
-              ),
-            ],
-            IconButton(
-              icon: const Icon(Icons.tune, color: Colors.white),
-              onPressed: () {
-                _showAdvancedSettings();
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white),
-              onPressed: () {
-                _showServerSelectionDialog();
-              },
-            ),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    _downloadStatus == DownloadTaskStatus.running
-                        ? Icons.downloading
-                        : _downloadStatus == DownloadTaskStatus.complete
-                        ? Icons.offline_pin
-                        : Icons.download,
-                    color: Colors.white,
-                  ),
-                  onPressed:
-                      _downloadStatus == DownloadTaskStatus.running &&
-                          _downloadTaskId != null
-                      ? () => _cancelDownload(_downloadTaskId!)
-                      : _downloadVideo,
-                  tooltip: _downloadStatus == DownloadTaskStatus.running
-                      ? 'Cancel Download'
-                      : 'Download for offline viewing',
-                ),
-                if (_downloadStatus == DownloadTaskStatus.running)
-                  CircularProgressIndicator(
-                    value: _downloadProgress / 100,
-                    strokeWidth: 2,
-                    backgroundColor: Colors.white24,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                if (_downloadStatus == DownloadTaskStatus.running)
-                  Positioned(
-                    bottom: 8,
-                    child: Text(
-                      '${_downloadProgress.toInt()}%',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            IconButton(
-              icon: const Icon(Icons.fullscreen, color: Colors.white),
-              onPressed: () {
-                if (_chewieController != null) {
-                  _chewieController!.enterFullScreen();
-                }
-              },
-            ),
-          ],
-        ),
         body: _isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF5B13EC)),
@@ -1558,7 +1385,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     CustomVideoControls(
                       chewieController: _chewieController!,
                       onSettingsPressed: _showAdvancedSettings,
-                      onFullscreenPressed: _enterFullscreen,
+                      onFullscreenPressed: _toggleFullscreen,
                       onSkipBackward: _skipBackward,
                       onSkipForward: _skipForward,
                       onPipPressed: _enterPipMode,
@@ -1632,6 +1459,193 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                 ),
               ),
       ),
+    );
+  }
+
+  /// Build fullscreen player view with custom controls
+  Widget _buildFullscreenPlayer() {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF5B13EC)),
+            )
+          : _errorMessage != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Colors.red,
+                    size: 64,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _isLoading = true;
+                        _errorMessage = null;
+                      });
+                      _initializePlayer();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5B13EC),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : _chewieController != null
+          ? Stack(
+              children: [
+                // Enhanced gesture controls
+                VideoGestureControls(
+                  onDoubleTapLeft: _skipBackward,
+                  onDoubleTapRight: _skipForward,
+                  onTap: _toggleControlsVisibility,
+                  onHorizontalDragUpdate: _onHorizontalDragUpdate,
+                  onVerticalDragUpdate: _onVerticalDragUpdate,
+                  child: Chewie(controller: _chewieController!),
+                ),
+
+                // Custom controls overlay
+                if (_showControls && !_showSettings)
+                  CustomVideoControls(
+                    chewieController: _chewieController!,
+                    onSettingsPressed: _showAdvancedSettings,
+                    onFullscreenPressed: () {}, // No operation in fullscreen mode to avoid duplicate buttons
+                    onSkipBackward: _skipBackward,
+                    onSkipForward: _skipForward,
+                    onPipPressed: _enterPipMode,
+                    onChapterPressed: _toggleChapterSelector,
+                  ),
+
+                // Chapter selector overlay
+                ChapterSelector(
+                  chapters: _chapters,
+                  onChapterSelected: _jumpToChapter,
+                  currentPosition: _videoPlayerController.value.position,
+                  totalDuration: _videoPlayerController.value.duration,
+                  isVisible: _showChapterSelector,
+                  onVisibilityChanged: (visible) {
+                    setState(() {
+                      _showChapterSelector = visible;
+                    });
+                  },
+                ),
+
+                // Episode Navigation Overlay
+                if (widget.episodes != null)
+                  VideoPlayerOverlay(
+                    showOverlay: _showNextEpisodeOverlay,
+                    nextEpisodeTitle:
+                        widget.episodes!.length >
+                            widget.currentEpisodeIndex + 1
+                        ? widget
+                              .episodes![widget.currentEpisodeIndex + 1]
+                              .title
+                        : null,
+                    nextEpisodeNumber:
+                        widget.episodes!.length >
+                            widget.currentEpisodeIndex + 1
+                        ? widget
+                              .episodes![widget.currentEpisodeIndex + 1]
+                              .episodeNo
+                              .toString()
+                        : null,
+                    countdown: _calculateCountdown(),
+                    onPlayNow: _playNextEpisode,
+                    onCancel: _cancelAutoPlay,
+                  ),
+
+                // Skip message overlay
+                SkipMessageOverlay(
+                  message: _skipMessage,
+                  show: _showSkipMessage,
+                ),
+
+                // Seek preview overlay
+                SeekPreview(
+                  currentPosition: _seekPosition,
+                  totalDuration: _videoPlayerController.value.duration,
+                  seekPosition: _seekPosition,
+                  show: _showSeekPreview,
+                ),
+
+                // Volume/Brightness control preview
+                ControlPreview(
+                  icon: _isControllingBrightness ? '💡' : '🔊',
+                  value: _volumeLevel,
+                  show: _showVolumePreview,
+                ),
+                
+                // Exit fullscreen button (top right corner)
+                Positioned(
+                  top: 20,
+                  right: 20,
+                  child: IconButton(
+                    icon: const Icon(Icons.fullscreen_exit, color: Colors.white, size: 32),
+                    onPressed: _exitFullscreen,
+                  ),
+                ),
+                
+                // Title bar in fullscreen (showing anime title and episode)
+                Positioned(
+                  top: 20,
+                  left: 20,
+                  right: 80, // Make space for exit button
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.animeTitle,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          widget.episodeTitle,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: const Color(0xFFA7A7A7),
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : const Center(
+              child: Text(
+                'Video player not initialized',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
     );
   }
 }

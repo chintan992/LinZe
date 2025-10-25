@@ -91,11 +91,6 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Back button
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-          ),
           const Spacer(),
           // Chapter button
           IconButton(
@@ -196,9 +191,9 @@ class _CustomVideoControlsState extends State<CustomVideoControls>
       child: IconButton(
         onPressed: () {
           if (isPlaying) {
-            widget.chewieController.pause();
+            widget.chewieController.videoPlayerController.pause();
           } else {
-            widget.chewieController.play();
+            widget.chewieController.videoPlayerController.play();
           }
         },
         icon: Icon(

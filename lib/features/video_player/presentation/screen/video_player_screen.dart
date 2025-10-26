@@ -1618,6 +1618,73 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     child: Chewie(controller: _chewieController!),
                   ),
 
+                  // Top navigation bar with title and progress
+                  if (_showControls)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Back button and title
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                  onPressed: () {
+                                    debugPrint(
+                                      'VideoPlayerScreen: Back button pressed - pausing video and cleaning up',
+                                    );
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.animeTitle,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        widget.episodeTitle,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          color: const Color(0xFFA7A7A7),
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   // Center video controls overlay (when controls are visible)
                   if (_showControls)
                     Positioned(
@@ -1638,10 +1705,31 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(30),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
                                 ),
-                                child: IconButton(
-                                  onPressed: _skipBackward,
-                                  icon: const Icon(Icons.replay_10, color: Colors.white, size: 32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      onPressed: _skipBackward,
+                                      icon: const Icon(Icons.replay_10, color: Colors.white, size: 24),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    Text(
+                                      'REW',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 40),
@@ -1656,6 +1744,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                     color: Colors.white.withValues(alpha: 0.3),
                                     width: 2,
                                   ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.3),
+                                      blurRadius: 15,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
                                 ),
                                 child: ValueListenableBuilder<VideoPlayerValue>(
                                   valueListenable: _videoPlayerController,
@@ -1687,10 +1782,31 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(30),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
                                 ),
-                                child: IconButton(
-                                  onPressed: _skipForward,
-                                  icon: const Icon(Icons.forward_10, color: Colors.white, size: 32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      onPressed: _skipForward,
+                                      icon: const Icon(Icons.forward_10, color: Colors.white, size: 24),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    Text(
+                                      'FWD',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -1804,6 +1920,110 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     value: _volumeLevel,
                     show: _showVolumePreview,
                   ),
+                  
+                  // Bottom control bar
+                  if (_showControls)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            // Lock controls button
+                            IconButton(
+                              icon: Icon(
+                                Icons.lock_outline,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showControls = !_showControls;
+                                });
+                              },
+                              tooltip: 'Lock Controls',
+                            ),
+                            // Rotate/Resize button (placeholder for orientation changes)
+                            IconButton(
+                              icon: Icon(
+                                Icons.screen_rotation,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: () {
+                                // Placeholder for rotation functionality
+                                // In a real implementation, this would trigger orientation changes
+                              },
+                              tooltip: 'Rotate Screen',
+                            ),
+                            // Resize button (placeholder for aspect ratio changes)
+                            IconButton(
+                              icon: Icon(
+                                Icons.aspect_ratio,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: () {
+                                // Placeholder for resize functionality
+                              },
+                              tooltip: 'Resize Video',
+                            ),
+                            // Server selection button
+                            IconButton(
+                              icon: Icon(
+                                Icons.dns,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: _isVideoInitialized ? _showServerSelectionDialog : null,
+                              tooltip: 'Select Server',
+                            ),
+                            // Sub/Dub selection button
+                            IconButton(
+                              icon: Icon(
+                                _selectedType == 'sub' ? Icons.subtitles : Icons.volume_up,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: _isVideoInitialized ? () {
+                                final newType = _selectedType == 'sub' ? 'dub' : 'sub';
+                                if (_selectedServer != null) {
+                                  _switchServer(_selectedServer!, newType);
+                                }
+                              } : null,
+                              tooltip: _selectedType == 'sub' ? 'Switch to Dub' : 'Switch to Sub',
+                            ),
+                            // Next episode button
+                            if (widget.episodes != null)
+                              IconButton(
+                                icon: Icon(
+                                  Icons.skip_next,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                onPressed: widget.episodes != null &&
+                                    widget.currentEpisodeIndex < widget.episodes!.length - 1
+                                    ? _playNextEpisode
+                                    : null,
+                                tooltip: 'Next Episode',
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               )
             : const Center(
@@ -1874,6 +2094,68 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   child: Chewie(controller: _chewieController!),
                 ),
 
+                // Top navigation bar with title and progress
+                if (_showControls)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.8),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Back button and title (in fullscreen, use exit fullscreen button instead)
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.fullscreen_exit, color: Colors.white, size: 28),
+                                onPressed: _exitFullscreen,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.animeTitle,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      widget.episodeTitle,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: const Color(0xFFA7A7A7),
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                 // Center video controls overlay (when controls are visible)
                 if (_showControls)
                   Positioned(
@@ -1894,10 +2176,31 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
-                              child: IconButton(
-                                onPressed: _skipBackward,
-                                icon: const Icon(Icons.replay_10, color: Colors.white, size: 32),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    onPressed: _skipBackward,
+                                    icon: const Icon(Icons.replay_10, color: Colors.white, size: 24),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  Text(
+                                    'REW',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 40),
@@ -1912,6 +2215,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                   color: Colors.white.withValues(alpha: 0.3),
                                   width: 2,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(0.3),
+                                    blurRadius: 15,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
                               ),
                               child: ValueListenableBuilder<VideoPlayerValue>(
                                 valueListenable: _videoPlayerController,
@@ -1943,10 +2253,31 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
-                              child: IconButton(
-                                onPressed: _skipForward,
-                                icon: const Icon(Icons.forward_10, color: Colors.white, size: 32),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    onPressed: _skipForward,
+                                    icon: const Icon(Icons.forward_10, color: Colors.white, size: 24),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  Text(
+                                    'FWD',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -2108,6 +2439,110 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     ),
                   ),
                 ),
+                
+                // Bottom control bar
+                if (_showControls)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.8),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          // Lock controls button
+                          IconButton(
+                            icon: Icon(
+                              Icons.lock_outline,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showControls = !_showControls;
+                              });
+                            },
+                            tooltip: 'Lock Controls',
+                          ),
+                          // Rotate/Resize button (placeholder for orientation changes)
+                          IconButton(
+                            icon: Icon(
+                              Icons.screen_rotation,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            onPressed: () {
+                              // Placeholder for rotation functionality
+                              // In a real implementation, this would trigger orientation changes
+                            },
+                            tooltip: 'Rotate Screen',
+                          ),
+                          // Resize button (placeholder for aspect ratio changes)
+                          IconButton(
+                            icon: Icon(
+                              Icons.aspect_ratio,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            onPressed: () {
+                              // Placeholder for resize functionality
+                            },
+                            tooltip: 'Resize Video',
+                          ),
+                          // Server selection button
+                          IconButton(
+                            icon: Icon(
+                              Icons.dns,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            onPressed: _isVideoInitialized ? _showServerSelectionDialog : null,
+                            tooltip: 'Select Server',
+                          ),
+                          // Sub/Dub selection button
+                          IconButton(
+                            icon: Icon(
+                              _selectedType == 'sub' ? Icons.subtitles : Icons.volume_up,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            onPressed: _isVideoInitialized ? () {
+                              final newType = _selectedType == 'sub' ? 'dub' : 'sub';
+                              if (_selectedServer != null) {
+                                _switchServer(_selectedServer!, newType);
+                              }
+                            } : null,
+                            tooltip: _selectedType == 'sub' ? 'Switch to Dub' : 'Switch to Sub',
+                          ),
+                          // Next episode button
+                          if (widget.episodes != null)
+                            IconButton(
+                              icon: Icon(
+                                Icons.skip_next,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              onPressed: widget.episodes != null &&
+                                  widget.currentEpisodeIndex < widget.episodes!.length - 1
+                                  ? _playNextEpisode
+                                  : null,
+                              tooltip: 'Next Episode',
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             )
           : const Center(

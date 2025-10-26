@@ -12,7 +12,6 @@ import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/services/anime_provider.dart';
 import 'package:linze/core/providers/user_preferences_provider.dart';
 import 'package:linze/features/video_player/controllers/video_player_controller.dart';
-import 'package:linze/features/video_player/presentation/widgets/custom_video_controls.dart';
 import 'package:linze/features/video_player/presentation/widgets/video_player_overlay.dart';
 import 'package:linze/features/video_player/presentation/widgets/gesture_controls.dart';
 import 'package:linze/features/video_player/presentation/widgets/settings_panel.dart';
@@ -72,9 +71,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   // UI state
   bool _showControls = true;
-  bool _showSettings = false;
   bool _showSkipMessage = false;
   String _skipMessage = '';
+  bool _isVideoInitialized = false;
 
   // Chapter selector state
   bool _showChapterSelector = false;
@@ -230,6 +229,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         setState(() {
           _isLoading = false;
+          _isVideoInitialized = true; // Mark video as initialized
           // Ensure custom controls are visible after switching servers
           // so the user can interact with the paused/new video immediately.
           _showControls = true;
@@ -582,6 +582,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         setState(() {
           _isLoading = false;
+          _isVideoInitialized = true; // Mark video as initialized
           // Ensure custom controls are visible after switching servers
           // so the user can interact with the paused/new video immediately.
           _showControls = true;
@@ -960,10 +961,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   void _showAdvancedSettings() {
-    setState(() {
-      _showSettings = true;
-    });
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1018,11 +1015,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           },
         );
       },
-    ).then((_) {
-      setState(() {
-        _showSettings = false;
-      });
-    });
+    );
   }
 
   void _showServerSelectionDialog() {
@@ -1327,6 +1320,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
         setState(() {
           _isLoading = false;
+          _isVideoInitialized = true; // Mark video as initialized
           // Ensure custom controls are visible after switching servers
           // so the user can interact with the paused/new video immediately.
           _showControls = true;
@@ -1493,11 +1487,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       tooltip: 'Next Episode',
                     ),
                   ],
+                  // Chapter Selection button
+                  IconButton(
+                    icon: const Icon(Icons.menu_book, color: Colors.white),
+                    onPressed: _isVideoInitialized ? _toggleChapterSelector : null,
+                    tooltip: 'Chapters',
+                  ),
+                  // Server Selection button
+                  IconButton(
+                    icon: const Icon(Icons.dns, color: Colors.white),
+                    onPressed: _isVideoInitialized ? _showServerSelectionDialog : null,
+                    tooltip: 'Select Server',
+                  ),
+                  // PiP button
+                  IconButton(
+                    icon: const Icon(Icons.picture_in_picture_alt_outlined, color: Colors.white),
+                    onPressed: _isVideoInitialized ? _enterPipMode : null,
+                    tooltip: 'Picture-in-Picture',
+                  ),
+                  // Settings button
                   IconButton(
                     icon: const Icon(Icons.tune, color: Colors.white),
-                    onPressed: () {
-                      _showAdvancedSettings();
-                    },
+                    onPressed: _isVideoInitialized ? _showAdvancedSettings : null,
+                    tooltip: 'Settings',
                   ),
                   Stack(
                     alignment: Alignment.center,
@@ -1606,18 +1618,87 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     child: Chewie(controller: _chewieController!),
                   ),
 
-                  // Custom controls overlay
-                  if (_showControls && !_showSettings)
-                    CustomVideoControls(
-                      chewieController: _chewieController!,
-                      onSettingsPressed: _showAdvancedSettings,
-                      onFullscreenPressed: _toggleFullscreen,
-                      onSkipBackward: _skipBackward,
-                      onSkipForward: _skipForward,
-                      onPipPressed: _enterPipMode,
-                      onChapterPressed: _toggleChapterSelector,
-                      onServerPressed: _showServerSelectionDialog, // Server selection dialog
+                  // Center video controls overlay (when controls are visible)
+                  if (_showControls)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: IgnorePointer(
+                        ignoring: !_showControls,
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Skip backward button
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: IconButton(
+                                  onPressed: _skipBackward,
+                                  icon: const Icon(Icons.replay_10, color: Colors.white, size: 32),
+                                ),
+                              ),
+                              const SizedBox(width: 40),
+                              // Play/Pause button
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(40),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: ValueListenableBuilder<VideoPlayerValue>(
+                                  valueListenable: _videoPlayerController,
+                                  builder: (context, value, child) {
+                                    bool isPlaying = value.isPlaying;
+                                    return IconButton(
+                                      icon: Icon(
+                                        isPlaying ? Icons.pause : Icons.play_arrow,
+                                        color: Colors.white,
+                                        size: 48,
+                                      ),
+                                      onPressed: () {
+                                        if (isPlaying) {
+                                          _videoPlayerController.pause();
+                                        } else {
+                                          _videoPlayerController.play();
+                                        }
+                                      },
+                                      padding: EdgeInsets.zero,
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 40),
+                              // Skip forward button
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: IconButton(
+                                  onPressed: _skipForward,
+                                  icon: const Icon(Icons.forward_10, color: Colors.white, size: 32),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
+
 
                   // Chapter selector overlay
                   ChapterSelector(
@@ -1671,6 +1752,52 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     show: _showSeekPreview,
                   ),
 
+                  // Progress bar overlay (when controls are visible)
+                  if (_showControls)
+                    Positioned(
+                      bottom: 80, // Position above other overlays
+                      left: 20,
+                      right: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            // Progress bar
+                            VideoProgressIndicator(
+                              _videoPlayerController,
+                              allowScrubbing: true,
+                              colors: VideoProgressColors(
+                                playedColor: const Color(0xFF5B13EC),
+                                bufferedColor: Colors.white.withValues(alpha: 0.5),
+                                backgroundColor: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            // Time display
+                            ValueListenableBuilder<VideoPlayerValue>(
+                              valueListenable: _videoPlayerController,
+                              builder: (context, value, child) {
+                                final position = value.position;
+                                final duration = value.duration;
+                                return Text(
+                                  '${_formatDuration(position)} / ${_formatDuration(duration)}',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  
                   // Volume/Brightness control preview
                   ControlPreview(
                     icon: _isControllingBrightness ? '💡' : '🔊',
@@ -1747,18 +1874,87 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   child: Chewie(controller: _chewieController!),
                 ),
 
-                // Custom controls overlay
-                if (_showControls && !_showSettings)
-                  CustomVideoControls(
-                    chewieController: _chewieController!,
-                    onSettingsPressed: _showAdvancedSettings,
-                    onFullscreenPressed: () {}, // No operation in fullscreen mode to avoid duplicate buttons
-                    onSkipBackward: _skipBackward,
-                    onSkipForward: _skipForward,
-                    onPipPressed: _enterPipMode,
-                    onChapterPressed: _toggleChapterSelector,
-                    onServerPressed: _showServerSelectionDialog, // Server selection dialog
+                // Center video controls overlay (when controls are visible)
+                if (_showControls)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      ignoring: !_showControls,
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Skip backward button
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: IconButton(
+                                onPressed: _skipBackward,
+                                icon: const Icon(Icons.replay_10, color: Colors.white, size: 32),
+                              ),
+                            ),
+                            const SizedBox(width: 40),
+                            // Play/Pause button
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(40),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                  width: 2,
+                                ),
+                              ),
+                              child: ValueListenableBuilder<VideoPlayerValue>(
+                                valueListenable: _videoPlayerController,
+                                builder: (context, value, child) {
+                                  bool isPlaying = value.isPlaying;
+                                  return IconButton(
+                                    icon: Icon(
+                                      isPlaying ? Icons.pause : Icons.play_arrow,
+                                      color: Colors.white,
+                                      size: 48,
+                                    ),
+                                    onPressed: () {
+                                      if (isPlaying) {
+                                        _videoPlayerController.pause();
+                                      } else {
+                                        _videoPlayerController.play();
+                                      }
+                                    },
+                                    padding: EdgeInsets.zero,
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 40),
+                            // Skip forward button
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: IconButton(
+                                onPressed: _skipForward,
+                                icon: const Icon(Icons.forward_10, color: Colors.white, size: 32),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
+
 
                 // Chapter selector overlay
                 ChapterSelector(
@@ -1818,6 +2014,52 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   value: _volumeLevel,
                   show: _showVolumePreview,
                 ),
+                
+                // Progress bar overlay (when controls are visible)
+                if (_showControls)
+                  Positioned(
+                    bottom: 80, // Position above other overlays
+                    left: 20,
+                    right: 20,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          // Progress bar
+                          VideoProgressIndicator(
+                            _videoPlayerController,
+                            allowScrubbing: true,
+                            colors: VideoProgressColors(
+                              playedColor: const Color(0xFF5B13EC),
+                              bufferedColor: Colors.white.withValues(alpha: 0.5),
+                              backgroundColor: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Time display
+                          ValueListenableBuilder<VideoPlayerValue>(
+                            valueListenable: _videoPlayerController,
+                            builder: (context, value, child) {
+                              final position = value.position;
+                              final duration = value.duration;
+                              return Text(
+                                '${_formatDuration(position)} / ${_formatDuration(duration)}',
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 
                 // Exit fullscreen button (top right corner)
                 Positioned(

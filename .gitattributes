@@ -1,0 +1,48 @@
+# Normalize line endings and mark common binary files
+# Default: detect text files and normalize to LF
+* text=auto
+
+# Force LF for common text files used in this repo
+*.dart text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.gradle text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+
+# Package and lockfiles
+pubspec.yaml text eol=lf
+*.lock text eol=lf
+
+# IDE / OS files should be treated as generated/binary (no normalization)
+.gradle/** binary
+.idea/** binary
+.vscode/** binary
+
+# Images and other binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.jar binary
+
+# Flutter build outputs should be treated as binary
+build/** binary
+android/**/build/** binary
+ios/Flutter/** binary
+
+# End of .gitattributes

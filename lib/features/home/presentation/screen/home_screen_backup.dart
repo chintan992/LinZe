@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart' as provider_package;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:linze/core/services/anime_provider.dart';
-import 'package:linze/core/models/anime_model.dart' as anime_models;
+import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/widgets/app_logo.dart';
 import 'package:linze/features/anime_detail/presentation/screen/anime_detail_screen.dart';
 import 'package:linze/features/search_discovery/presentation/screen/search_discovery_screen.dart';
@@ -19,8 +19,8 @@ import 'package:linze/features/home/presentation/widgets/minimal_continue_watchi
 import 'package:linze/core/widgets/anime_card.dart';
 import 'package:linze/features/home/presentation/widgets/genre_chip.dart';
 import 'package:linze/core/api/api_service.dart';
+import 'package:linze/core/models/anime_model.dart';
 import 'package:linze/core/models/home.dart';
-import 'package:linze/core/models/response_models.dart' as response_models;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,20 +39,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isAppBarVisible = false;
   
   // Cache for anime data to prevent repeated network calls
-  final Map<String, anime_models.Anime> _animeCache = {};
-  final Map<String, Future<anime_models.Anime?>> _animeFutureCache = {};
+  final Map<String, Anime> _animeCache = {};
+  final Map<String, Future<Anime?>> _animeFutureCache = {};
 
   // State variables for trending tab
   String _trendingSortType = 'rank';
   Set<String> _expandedGenres = {};
-  Set<String> _trendingFilters = {};
 
   // State variables for new tab
   String _newSortType = 'date';
-  Set<String> _newFilters = {};
-
-  // Cache for genre-specific data
-  final Map<String, List<anime_models.Anime>> _genreCache = {};
 
 
   @override
@@ -293,9 +288,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       if (forYouMap['featuredAnime'] != null)
                         SliverToBoxAdapter(
                           child: MinimalHeroBanner(
-                            featuredAnime: forYouMap['featuredAnime'] as anime_models.Anime,
+                            featuredAnime: forYouMap['featuredAnime'] as Anime,
                             onPlay: () {
-                              _navigateToAnimeDetail((forYouMap['featuredAnime'] as anime_models.Anime).id);
+                              _navigateToAnimeDetail((forYouMap['featuredAnime'] as Anime).id);
                             },
                             onAddToList: () {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -328,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     itemCount: min(recentlyWatchedList.length, 10),
                                     itemBuilder: (context, index) {
                                       final watchProgress = recentlyWatchedList[index];
-                                      return FutureBuilder<anime_models.Anime?>(
+                                      return FutureBuilder<Anime?>(
                                         future: _getAnimeForWatchProgress(ref, watchProgress),
                                         builder: (context, snapshot) {
                                           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -412,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   final anime = _convertToAnime((forYouMap['recommended'] as List)[index]);
                                   return AnimeCard(
                                     anime: anime,
-                                    type: AnimeCardType.standard,
+                                    type: AnimeCardType.minimal,
                                     onTap: () {
                                       _navigateToAnimeDetail(anime.id);
                                     },
@@ -442,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   final anime = _convertToAnime((forYouMap['topAiring'] as List)[index]);
                                   return AnimeCard(
                                     anime: anime,
-                                    type: AnimeCardType.standard,
+                                    type: AnimeCardType.minimal,
                                     onTap: () {
                                       _navigateToAnimeDetail(anime.id);
                                     },
@@ -462,29 +457,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             title: 'Quick Picks',
                             padding: const EdgeInsets.all(16),
                             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                            child: SizedBox(
-                              height: 280, // Fixed height to match the grid content
-                              child: GridView.count(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 0.7,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                children: List.generate(
-                                  4,
-                                  (index) {
-                                    // Skip first 10 items and take the next 4 for variety
-                                    final anime = _convertToAnime((forYouMap['topAiring'] as List)[index + 10]);
-                                    return AnimeCard(
-                                      anime: anime,
-                                      type: AnimeCardType.standard,
-                                      onTap: () {
-                                        _navigateToAnimeDetail(anime.id);
-                                      },
-                                    );
-                                  },
-                                ),
+                            child: GridView.count(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.7,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: List.generate(
+                                4,
+                                (index) {
+                                  // Skip first 10 items and take the next 4 for variety
+                                  final anime = _convertToAnime((forYouMap['topAiring'] as List)[index + 10]);
+                                  return AnimeCard(
+                                    anime: anime,
+                                    type: AnimeCardType.minimal,
+                                    onTap: () {
+                                      _navigateToAnimeDetail(anime.id);
+                                    },
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -704,50 +696,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             final genres = trendingMap['genres'] as List<String>?;
             
             // Apply sorting if needed
-            List<dynamic> sortedTopTrending = _applySorting<dynamic>(topTrending ?? [], _trendingSortType, 'trending');
-            
-            // Apply filters to the data before building sections
-            List<dynamic> filteredTopTrending = sortedTopTrending.where((item) {
-              if (_trendingFilters.isEmpty) return true;
-              
-              anime_models.Anime anime = _convertTrendingToAnime(item);
-              
-              // If airing filter is selected and anime is not airing, skip
-              if (_trendingFilters.contains('airing') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('airing') ?? false)) {
-                return false;
-              }
-              
-              // If completed filter is selected and anime is not completed, skip
-              if (_trendingFilters.contains('completed') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('completed') ?? false)) {
-                return false;
-              }
-              
-              // Add other filter conditions as needed
-              return true;
-            }).toList();
-            
-            List<dynamic> filteredTopAiring = (topAiring ?? []).where((item) {
-              if (_trendingFilters.isEmpty) return true;
-              
-              anime_models.Anime anime = _convertToAnime(item);
-              
-              // If airing filter is selected and anime is not airing, skip
-              if (_trendingFilters.contains('airing') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('airing') ?? false)) {
-                return false;
-              }
-              
-              // If completed filter is selected and anime is not completed, skip
-              if (_trendingFilters.contains('completed') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('completed') ?? false)) {
-                return false;
-              }
-              
-              // Add other filter conditions as needed
-              return true;
-            }).toList();
+            List<dynamic>? sortedTopTrending = _applySorting<dynamic>(topTrending ?? [], _trendingSortType, 'trending');
             
             return RefreshIndicator(
               onRefresh: () async {
@@ -773,14 +722,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: min(filteredTopTrending.length, 10),
+                          itemCount: min(sortedTopTrending.length, 10),
                           itemBuilder: (context, index) {
-                            final trending = filteredTopTrending[index];
+                            final trending = sortedTopTrending[index];
                             final anime = _convertTrendingToAnime(trending);
-                            return AnimeCard(
+                            return MinimalRankCard(
                               anime: anime,
-                              type: AnimeCardType.trending,
-                              trendingRank: index + 1,
+                              rank: index + 1,
                               onTap: () => _navigateToAnimeDetail(anime.id),
                             );
                           },
@@ -791,39 +739,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   
-                  // Section 2: Rising Stars Header
+                  // Section 2: Rising Stars
                   SliverToBoxAdapter(
                     child: SectionCard(
                       title: 'Rising Stars',
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                      child: Container(),
-                    ),
-                  ),
-                  
-                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                  
-                  // Rising Stars Grid Content
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      child: GridView.count(
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                         childAspectRatio: 0.7,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index >= min(filteredTopAiring.length, 10)) return null;
-                          final trending = filteredTopAiring[index];
-                          final anime = _convertToAnime(trending);
-                          return AnimeCard(
-                            anime: anime,
-                            type: AnimeCardType.standard,
-                            onTap: () => _navigateToAnimeDetail(anime.id),
-                          );
-                        },
-                        childCount: min(filteredTopAiring.length, 10),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(
+                          min((topAiring?.length ?? 0), 10),
+                          (index) {
+                            final trending = topAiring![index];
+                            final anime = _convertToAnime(trending);
+                            return AnimeCard(
+                              anime: anime,
+                              type: AnimeCardType.minimal,
+                              onTap: () => _navigateToAnimeDetail(anime.id),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -851,78 +790,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             );
           },
-          loading: () => CustomScrollView(
-            slivers: [
-              SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(color: primaryColor),
-                ),
-              ),
-            ],
+          loading: () => const SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(color: primaryColor),
+            ),
           ),
           error: (error, stack) {
-            return CustomScrollView(
-              slivers: [
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          child: const Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 48,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Oops! Something went wrong',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Please check your connection and try again',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await ref.refresh(trendingTabProvider.future);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: Text(
-                            'Try Again',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+            return SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 48,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Oops! Something went wrong',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Please check your connection and try again',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () async {
+                        await ref.refresh(trendingTabProvider.future);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: Text(
+                        'Try Again',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           },
         );
@@ -947,50 +878,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             final latestCompleted = newMap['latestCompleted'] as List?;
             
             // Apply sorting if needed
-            List<dynamic> sortedLatestEpisodes = _applySorting<dynamic>(latestEpisodes ?? [], _newSortType, 'new');
-            
-            // Apply filters to the data before building sections
-            List<dynamic> filteredLatestEpisodes = sortedLatestEpisodes.where((item) {
-              if (_newFilters.isEmpty) return true;
-              
-              anime_models.Anime anime = _convertToAnime(item);
-              
-              // If airing filter is selected and anime is not airing, skip
-              if (_newFilters.contains('airing') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('airing') ?? false)) {
-                return false;
-              }
-              
-              // If completed filter is selected and anime is not completed, skip
-              if (_newFilters.contains('completed') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('completed') ?? false)) {
-                return false;
-              }
-              
-              // Add other filter conditions as needed
-              return true;
-            }).toList();
-            
-            List<dynamic> filteredLatestCompleted = (latestCompleted ?? []).where((item) {
-              if (_newFilters.isEmpty) return true;
-              
-              anime_models.Anime anime = _convertToAnime(item);
-              
-              // If airing filter is selected and anime is not airing, skip
-              if (_newFilters.contains('airing') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('airing') ?? false)) {
-                return false;
-              }
-              
-              // If completed filter is selected and anime is not completed, skip
-              if (_newFilters.contains('completed') && 
-                  !(anime.tvInfo?.showType?.toLowerCase().contains('completed') ?? false)) {
-                return false;
-              }
-              
-              // Add other filter conditions as needed
-              return true;
-            }).toList();
+            List<dynamic>? sortedLatestEpisodes = _applySorting<dynamic>(latestEpisodes ?? [], _newSortType, 'new');
             
             return RefreshIndicator(
               onRefresh: () async {
@@ -1002,92 +890,71 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 key: PageStorageKey('newScroll'),
                 controller: _tabScrollControllers[2],
                 slivers: [
-                  // Section 1: Latest Episodes Title
+                  // Section 1: Latest Episodes
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: SectionCard(
+                      title: 'Latest Episodes',
+                      trailing: IconButton(
+                        icon: Icon(Icons.sort, color: textSecondaryColor),
+                        onPressed: () => _showNewSortBottomSheet(context),
+                      ),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                      child: Column(
                         children: [
-                          Text(
-                            'Latest Episodes',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.sort, color: textSecondaryColor),
-                            onPressed: () => _showNewSortBottomSheet(context),
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: min(sortedLatestEpisodes.length, 10),
+                            separatorBuilder: (context, index) => Divider(color: dividerColor),
+                            itemBuilder: (context, index) {
+                              final episode = sortedLatestEpisodes[index];
+                              final anime = _convertToAnime(episode);
+                              return AnimeCard(
+                                anime: anime,
+                                type: AnimeCardType.horizontal,
+                                onTap: () => _navigateToAnimeDetail(anime.id),
+                              );
+                            },
                           ),
                         ],
                       ),
                     ),
                   ),
-                  // Section 1: Latest Episodes List
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index >= min(filteredLatestEpisodes.length, 10)) return null;
-                        final episode = filteredLatestEpisodes[index];
-                        final anime = _convertToAnime(episode);
-                        return AnimeCard(
-                          anime: anime,
-                          type: AnimeCardType.horizontal,
-                          onTap: () => _navigateToAnimeDetail(anime.id),
-                        );
-                      },
-                      childCount: min(filteredLatestEpisodes.length, 10),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Divider(color: dividerColor),
-                  ),
                   
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   
-                  // Section 2: New Series Header
+                  // Section 2: New Series
                   SliverToBoxAdapter(
                     child: SectionCard(
                       title: 'New Series',
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                    ),
-                  ),
-                  
-                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                  
-                  // New Series Grid Content
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      child: GridView.count(
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                         childAspectRatio: 0.65,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index >= min(filteredLatestCompleted.length, 10)) return null;
-                          final animeModel = filteredLatestCompleted[index];
-                          final anime = _convertToAnime(animeModel);
-                          return AnimeCard(
-                            anime: anime,
-                            type: AnimeCardType.newRelease,
-                            releaseDate: 'Recently Added', // Will extract from model or use default
-                            onTap: () => _navigateToAnimeDetail(anime.id),
-                            onAddToList: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Add to list functionality coming soon'),
-                                  backgroundColor: primaryColor,
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        childCount: min(filteredLatestCompleted.length, 10),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(
+                          min((latestCompleted?.length ?? 0), 10),
+                          (index) {
+                            final animeModel = latestCompleted![index];
+                            final anime = _convertToAnime(animeModel);
+                            return MinimalNewCard(
+                              anime: anime,
+                              releaseDate: 'Recently Added', // Will extract from model or use default
+                              onTap: () => _navigateToAnimeDetail(anime.id),
+                              onAddToList: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Add to list functionality coming soon'),
+                                    backgroundColor: primaryColor,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -1110,7 +977,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             final anime = _convertScheduleToAnime(scheduleItem);
                             return AnimeCard(
                               anime: anime,
-                              type: AnimeCardType.standard,
+                              type: AnimeCardType.minimal,
                               onTap: () => _navigateToAnimeDetail(anime.id),
                             );
                           },
@@ -1124,78 +991,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             );
           },
-          loading: () => CustomScrollView(
-            slivers: [
-              SliverFillRemaining(
-                child: Center(
-                  child: CircularProgressIndicator(color: primaryColor),
-                ),
-              ),
-            ],
+          loading: () => const SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(color: primaryColor),
+            ),
           ),
           error: (error, stack) {
-            return CustomScrollView(
-              slivers: [
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          child: const Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 48,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Oops! Something went wrong',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Please check your connection and try again',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await ref.refresh(newTabProvider.future);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: Text(
-                            'Try Again',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+            return SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 48,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Oops! Something went wrong',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Please check your connection and try again',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () async {
+                        await ref.refresh(newTabProvider.future);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: Text(
+                        'Try Again',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           },
         );
@@ -1241,7 +1100,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<anime_models.Anime?> _getAnimeForWatchProgress(WidgetRef ref, WatchProgress watchProgress) async {
+  Future<Anime?> _getAnimeForWatchProgress(WidgetRef ref, WatchProgress watchProgress) async {
     // First check if we have a cached Anime object
     if (_animeCache.containsKey(watchProgress.animeId)) {
       return _animeCache[watchProgress.animeId];
@@ -1249,71 +1108,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     
     // Check if we have a cached future for this animeId to avoid duplicate requests
     if (_animeFutureCache.containsKey(watchProgress.animeId)) {
-      // The future cache returns Future<AnimeDetailApiResponse> but we need Future<Anime?>
-      // So we need to transform the result
-      final future = ref.read(animeDetailProvider(watchProgress.animeId).future);
-      final response = await future;
-      final animeData = response.data;
-      if (animeData != null) {
-        final anime = anime_models.Anime(
-          id: animeData.id,
-          dataId: animeData.dataId,
-          poster: animeData.poster,
-          title: animeData.title,
-          japaneseTitle: animeData.japaneseTitle,
-          description: animeData.description,
-          tvInfo: animeData.tvInfo != null 
-              ? anime_models.TvInfo(
-                  showType: animeData.tvInfo!.showType,
-                  duration: animeData.tvInfo!.duration,
-                  sub: animeData.tvInfo!.sub,
-                  dub: animeData.tvInfo!.dub,
-                  eps: animeData.tvInfo!.eps,
-                )
-              : null,
-        );
-        return anime;
-      }
-      return null;
+      return _animeFutureCache[watchProgress.animeId];
     }
     
     try {
       // Create a new future to fetch the anime data using Riverpod
       final future = ref.read(animeDetailProvider(watchProgress.animeId).future);
+      _animeFutureCache[watchProgress.animeId] = future;
       
-      // Transform the Future<AnimeDetailApiResponse> to Future<Anime?> to store in cache
-      final transformedFuture = future.then<anime_models.Anime?>((response) {
-        final animeData = response.data; 
-        if (animeData != null) {
-          return anime_models.Anime(
-            id: animeData.id,
-            dataId: animeData.dataId,
-            poster: animeData.poster,
-            title: animeData.title,
-            japaneseTitle: animeData.japaneseTitle,
-            description: animeData.description,
-            tvInfo: animeData.tvInfo != null 
-                ? anime_models.TvInfo(
-                    showType: animeData.tvInfo!.showType,
-                    duration: animeData.tvInfo!.duration,
-                    sub: animeData.tvInfo!.sub,
-                    dub: animeData.tvInfo!.dub,
-                    eps: animeData.tvInfo!.eps,
-                  )
-                : null,
-          );
-        }
-        return null;
-      });
-      
-      _animeFutureCache[watchProgress.animeId] = transformedFuture;
-      
-      final anime = await transformedFuture;
+      final response = await future;
+      final anime = Anime(
+        id: response.id,
+        dataId: response.dataId,
+        poster: response.poster,
+        title: response.title,
+        japaneseTitle: response.japaneseTitle,
+        description: response.description,
+        tvInfo: response.tvInfo != null 
+            ? TvInfo(
+                showType: response.tvInfo!.showType,
+                duration: response.tvInfo!.duration,
+                sub: response.tvInfo!.sub,
+                dub: response.tvInfo!.dub,
+                eps: response.tvInfo!.eps,
+              )
+            : null,
+      );
       
       // Cache the anime and remove the future from cache
-      if (anime != null) {
-        _animeCache[watchProgress.animeId] = anime;
-      }
+      _animeCache[watchProgress.animeId] = anime;
       _animeFutureCache.remove(watchProgress.animeId);
       
       return anime;
@@ -1324,17 +1147,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  anime_models.Anime _convertToAnime(dynamic homeModel) {
+  Anime _convertToAnime(dynamic homeModel) {
     // Type-check against known home model types and map properties explicitly
     if (homeModel is Spotlight) {
-      return anime_models.Anime(
+      return Anime(
         id: homeModel.id,
         dataId: homeModel.dataId,
         poster: homeModel.poster,
         title: homeModel.title,
         japaneseTitle: homeModel.japaneseTitle,
         description: homeModel.description,
-        tvInfo: anime_models.TvInfo(
+        tvInfo: TvInfo(
           showType: homeModel.tvInfo.showType,
           duration: homeModel.tvInfo.duration,
           sub: homeModel.tvInfo.sub,
@@ -1343,14 +1166,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
     } else if (homeModel is TopAiring) {
-      return anime_models.Anime(
+      return Anime(
         id: homeModel.id,
         dataId: homeModel.dataId,
         poster: homeModel.poster,
         title: homeModel.title,
         japaneseTitle: homeModel.japaneseTitle,
         description: homeModel.description,
-        tvInfo: anime_models.TvInfo(
+        tvInfo: TvInfo(
           showType: homeModel.tvInfo.showType,
           duration: homeModel.tvInfo.duration,
           sub: homeModel.tvInfo.sub,
@@ -1359,14 +1182,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
     } else if (homeModel is MostPopular) {
-      return anime_models.Anime(
+      return Anime(
         id: homeModel.id,
         dataId: homeModel.dataId,
         poster: homeModel.poster,
         title: homeModel.title,
         japaneseTitle: homeModel.japaneseTitle,
         description: homeModel.description,
-        tvInfo: anime_models.TvInfo(
+        tvInfo: TvInfo(
           showType: homeModel.tvInfo.showType,
           duration: homeModel.tvInfo.duration,
           sub: homeModel.tvInfo.sub,
@@ -1375,14 +1198,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
     } else if (homeModel is MostFavorite) {
-      return anime_models.Anime(
+      return Anime(
         id: homeModel.id,
         dataId: homeModel.dataId,
         poster: homeModel.poster,
         title: homeModel.title,
         japaneseTitle: homeModel.japaneseTitle,
         description: homeModel.description,
-        tvInfo: anime_models.TvInfo(
+        tvInfo: TvInfo(
           showType: homeModel.tvInfo.showType,
           duration: homeModel.tvInfo.duration,
           sub: homeModel.tvInfo.sub,
@@ -1391,14 +1214,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
     } else if (homeModel is LatestCompleted) {
-      return anime_models.Anime(
+      return Anime(
         id: homeModel.id,
         dataId: homeModel.dataId,
         poster: homeModel.poster,
         title: homeModel.title,
         japaneseTitle: homeModel.japaneseTitle,
         description: homeModel.description,
-        tvInfo: anime_models.TvInfo(
+        tvInfo: TvInfo(
           showType: homeModel.tvInfo.showType,
           duration: homeModel.tvInfo.duration,
           sub: homeModel.tvInfo.sub,
@@ -1407,14 +1230,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
     } else if (homeModel is LatestEpisode) {
-      return anime_models.Anime(
+      return Anime(
         id: homeModel.id,
         dataId: homeModel.dataId,
         poster: homeModel.poster,
         title: homeModel.title,
         japaneseTitle: homeModel.japaneseTitle,
         description: homeModel.description,
-        tvInfo: anime_models.TvInfo(
+        tvInfo: TvInfo(
           showType: homeModel.tvInfo.showType,
           duration: homeModel.tvInfo.duration,
           sub: homeModel.tvInfo.sub,
@@ -1425,7 +1248,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
     
     // Fallback for unknown types or dynamic objects
-    return anime_models.Anime(
+    return Anime(
       id: homeModel.id ?? '',
       dataId: homeModel.dataId ?? 0,
       poster: homeModel.poster ?? '',
@@ -1433,7 +1256,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       japaneseTitle: homeModel.japaneseTitle ?? '',
       description: homeModel.description ?? '',
       tvInfo: homeModel.tvInfo != null 
-          ? anime_models.TvInfo(
+          ? TvInfo(
               showType: homeModel.tvInfo.showType ?? '',
               duration: homeModel.tvInfo.duration ?? '',
               sub: homeModel.tvInfo.sub ?? '',
@@ -1446,7 +1269,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   String _formatEpisodeNumber(String episodeId) {
     // Extract episode number from episodeId (e.g., "episode-5" → "Episode 5")
-    final RegExp regex = RegExp(r'\\d+');
+    final RegExp regex = RegExp(r'\d+');
     final Match? match = regex.firstMatch(episodeId);
     if (match != null) {
       return 'Episode ${match.group(0)!}';
@@ -1464,8 +1287,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
   
   // Helper method to convert Trending model to Anime
-  anime_models.Anime _convertTrendingToAnime(Trending trending) {
-    return anime_models.Anime(
+  Anime _convertTrendingToAnime(Trending trending) {
+    return Anime(
       id: trending.id,
       dataId: trending.dataId,
       poster: trending.poster,
@@ -1477,15 +1300,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
   
   // Helper method to convert Schedule model to Anime
-  anime_models.Anime _convertScheduleToAnime(Schedule schedule) {
-    return anime_models.Anime(
+  Anime _convertScheduleToAnime(Schedule schedule) {
+    return Anime(
       id: schedule.id,
       dataId: schedule.dataId,
-      poster: 'https://placehold.co/300x400?text=No+Image', // Using a placeholder
+      poster: '', // Placeholder, schedule doesn't have poster
       title: schedule.title,
       japaneseTitle: schedule.japaneseTitle ?? '',
       description: 'Releasing on ${schedule.releaseDate} at ${schedule.time ?? 'TBA'}',
-      tvInfo: anime_models.TvInfo(
+      tvInfo: TvInfo(
         showType: 'TV',
         duration: '',
         sub: '',
@@ -1506,9 +1329,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.6,
+          initialChildSize: 0.4,
           minChildSize: 0.3,
-          maxChildSize: 0.8,
+          maxChildSize: 0.6,
           builder: (context, scrollController) {
             return Container(
               padding: EdgeInsets.all(20),
@@ -1526,7 +1349,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   SizedBox(height: 20),
                   // Title
                   Text(
-                    'Trending Options',
+                    'Sort Trending',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -1534,174 +1357,88 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   SizedBox(height: 20),
-                  // Sort section
-                  Text(
-                    'Sort By',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                  // Sort options
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        ListTile(
+                          leading: Radio<String>(
+                            value: 'rank',
+                            groupValue: _trendingSortType,
+                            onChanged: (value) {
+                              setState(() {
+                                _trendingSortType = value!;
+                              });
+                              Navigator.pop(context);
+                            },
+                            activeColor: primaryColor,
+                          ),
+                          title: Text(
+                            'By Rank',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _trendingSortType = 'rank';
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: Radio<String>(
+                            value: 'popularity',
+                            groupValue: _trendingSortType,
+                            onChanged: (value) {
+                              setState(() {
+                                _trendingSortType = value!;
+                              });
+                              Navigator.pop(context);
+                            },
+                            activeColor: primaryColor,
+                          ),
+                          title: Text(
+                            'By Popularity',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _trendingSortType = 'popularity';
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: Radio<String>(
+                            value: 'title',
+                            groupValue: _trendingSortType,
+                            onChanged: (value) {
+                              setState(() {
+                                _trendingSortType = value!;
+                              });
+                              Navigator.pop(context);
+                            },
+                            activeColor: primaryColor,
+                          ),
+                          title: Text(
+                            'By Title (A-Z)',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _trendingSortType = 'title';
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  Column(
-                    children: [
-                      ListTile(
-                        leading: Radio<String>(
-                          value: 'rank',
-                          groupValue: _trendingSortType,
-                          onChanged: (value) {
-                            setState(() {
-                              _trendingSortType = value!;
-                            });
-                            Navigator.pop(context);
-                          },
-                          activeColor: primaryColor,
-                        ),
-                        title: Text(
-                          'By Rank',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _trendingSortType = 'rank';
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: Radio<String>(
-                          value: 'popularity',
-                          groupValue: _trendingSortType,
-                          onChanged: (value) {
-                            setState(() {
-                              _trendingSortType = value!;
-                            });
-                            Navigator.pop(context);
-                          },
-                          activeColor: primaryColor,
-                        ),
-                        title: Text(
-                          'By Popularity',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _trendingSortType = 'popularity';
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: Radio<String>(
-                          value: 'title',
-                          groupValue: _trendingSortType,
-                          onChanged: (value) {
-                            setState(() {
-                              _trendingSortType = value!;
-                            });
-                            Navigator.pop(context);
-                          },
-                          activeColor: primaryColor,
-                        ),
-                        title: Text(
-                          'By Title (A-Z)',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _trendingSortType = 'title';
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  // Filter section
-                  Text(
-                    'Filters',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilterChip(
-                        label: Text('Airing', style: GoogleFonts.plusJakartaSans(color: _trendingFilters.contains('airing') ? Colors.white : textSecondaryColor)),
-                        selected: _trendingFilters.contains('airing'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _trendingFilters.add('airing');
-                            } else {
-                              _trendingFilters.remove('airing');
-                            }
-                          });
-                        },
-                      ),
-                      FilterChip(
-                        label: Text('Completed', style: GoogleFonts.plusJakartaSans(color: _trendingFilters.contains('completed') ? Colors.white : textSecondaryColor)),
-                        selected: _trendingFilters.contains('completed'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _trendingFilters.add('completed');
-                            } else {
-                              _trendingFilters.remove('completed');
-                            }
-                          });
-                        },
-                      ),
-                      FilterChip(
-                        label: Text('Sub', style: GoogleFonts.plusJakartaSans(color: _trendingFilters.contains('sub') ? Colors.white : textSecondaryColor)),
-                        selected: _trendingFilters.contains('sub'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _trendingFilters.add('sub');
-                            } else {
-                              _trendingFilters.remove('sub');
-                            }
-                          });
-                        },
-                      ),
-                      FilterChip(
-                        label: Text('Dub', style: GoogleFonts.plusJakartaSans(color: _trendingFilters.contains('dub') ? Colors.white : textSecondaryColor)),
-                        selected: _trendingFilters.contains('dub'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _trendingFilters.add('dub');
-                            } else {
-                              _trendingFilters.remove('dub');
-                            }
-                          });
-                        },
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -1723,9 +1460,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.6,
+          initialChildSize: 0.4,
           minChildSize: 0.3,
-          maxChildSize: 0.8,
+          maxChildSize: 0.6,
           builder: (context, scrollController) {
             return Container(
               padding: EdgeInsets.all(20),
@@ -1743,7 +1480,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   SizedBox(height: 20),
                   // Title
                   Text(
-                    'New Releases Options',
+                    'Sort New Releases',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -1751,174 +1488,88 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   SizedBox(height: 20),
-                  // Sort section
-                  Text(
-                    'Sort By',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                  // Sort options
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        ListTile(
+                          leading: Radio<String>(
+                            value: 'date',
+                            groupValue: _newSortType,
+                            onChanged: (value) {
+                              setState(() {
+                                _newSortType = value!;
+                              });
+                              Navigator.pop(context);
+                            },
+                            activeColor: primaryColor,
+                          ),
+                          title: Text(
+                            'By Release Date',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _newSortType = 'date';
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: Radio<String>(
+                            value: 'title',
+                            groupValue: _newSortType,
+                            onChanged: (value) {
+                              setState(() {
+                                _newSortType = value!;
+                              });
+                              Navigator.pop(context);
+                            },
+                            activeColor: primaryColor,
+                          ),
+                          title: Text(
+                            'By Title (A-Z)',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _newSortType = 'title';
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: Radio<String>(
+                            value: 'episodes',
+                            groupValue: _newSortType,
+                            onChanged: (value) {
+                              setState(() {
+                                _newSortType = value!;
+                              });
+                              Navigator.pop(context);
+                            },
+                            activeColor: primaryColor,
+                          ),
+                          title: Text(
+                            'By Episode Count',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _newSortType = 'episodes';
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  Column(
-                    children: [
-                      ListTile(
-                        leading: Radio<String>(
-                          value: 'date',
-                          groupValue: _newSortType,
-                          onChanged: (value) {
-                            setState(() {
-                              _newSortType = value!;
-                            });
-                            Navigator.pop(context);
-                          },
-                          activeColor: primaryColor,
-                        ),
-                        title: Text(
-                          'By Release Date',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _newSortType = 'date';
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: Radio<String>(
-                          value: 'title',
-                          groupValue: _newSortType,
-                          onChanged: (value) {
-                            setState(() {
-                              _newSortType = value!;
-                            });
-                            Navigator.pop(context);
-                          },
-                          activeColor: primaryColor,
-                        ),
-                        title: Text(
-                          'By Title (A-Z)',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _newSortType = 'title';
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: Radio<String>(
-                          value: 'episodes',
-                          groupValue: _newSortType,
-                          onChanged: (value) {
-                            setState(() {
-                              _newSortType = value!;
-                            });
-                            Navigator.pop(context);
-                          },
-                          activeColor: primaryColor,
-                        ),
-                        title: Text(
-                          'By Episode Count',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _newSortType = 'episodes';
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  // Filter section
-                  Text(
-                    'Filters',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilterChip(
-                        label: Text('Airing', style: GoogleFonts.plusJakartaSans(color: _newFilters.contains('airing') ? Colors.white : textSecondaryColor)),
-                        selected: _newFilters.contains('airing'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _newFilters.add('airing');
-                            } else {
-                              _newFilters.remove('airing');
-                            }
-                          });
-                        },
-                      ),
-                      FilterChip(
-                        label: Text('Completed', style: GoogleFonts.plusJakartaSans(color: _newFilters.contains('completed') ? Colors.white : textSecondaryColor)),
-                        selected: _newFilters.contains('completed'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _newFilters.add('completed');
-                            } else {
-                              _newFilters.remove('completed');
-                            }
-                          });
-                        },
-                      ),
-                      FilterChip(
-                        label: Text('Sub', style: GoogleFonts.plusJakartaSans(color: _newFilters.contains('sub') ? Colors.white : textSecondaryColor)),
-                        selected: _newFilters.contains('sub'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _newFilters.add('sub');
-                            } else {
-                              _newFilters.remove('sub');
-                            }
-                          });
-                        },
-                      ),
-                      FilterChip(
-                        label: Text('Dub', style: GoogleFonts.plusJakartaSans(color: _newFilters.contains('dub') ? Colors.white : textSecondaryColor)),
-                        selected: _newFilters.contains('dub'),
-                        selectedColor: primaryColor,
-                        backgroundColor: surfaceColor,
-                        checkmarkColor: Colors.white,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _newFilters.add('dub');
-                            } else {
-                              _newFilters.remove('dub');
-                            }
-                          });
-                        },
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -1939,27 +1590,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // Keep original order (already sorted by rank)
           break;
         case 'popularity':
-          // Sort by Trending.number field if available
+          // Sort by some popularity metric if available
           sortedItems.sort((a, b) {
-            dynamic itemA = a;
-            dynamic itemB = b;
-            
-            int numberA = 0;
-            int numberB = 0;
-            
-            if (itemA is Trending) {
-              numberA = itemA.number ?? 0;
-            } else if (itemA is Map<String, dynamic>) {
-              numberA = (itemA['number'] as num?)?.toInt() ?? 0;
-            }
-            
-            if (itemB is Trending) {
-              numberB = itemB.number ?? 0;
-            } else if (itemB is Map<String, dynamic>) {
-              numberB = (itemB['number'] as num?)?.toInt() ?? 0;
-            }
-            
-            return numberB.compareTo(numberA); // Descending order
+            // Compare based on a popularity field if available, otherwise keep original
+            // For now, assume Trending model doesn't have a specific popularity field
+            return 0; // Keep original order
           });
           break;
         case 'title':
@@ -1984,12 +1619,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           break;
         case 'episodes':
           sortedItems.sort((a, b) {
-            // Convert items to Anime first to safely access tvInfo
-            anime_models.Anime animeA = _convertToAnime(a);
-            anime_models.Anime animeB = _convertToAnime(b);
-            
-            int epsA = int.tryParse(animeA.tvInfo?.eps.toString() ?? '0') ?? 0;
-            int epsB = int.tryParse(animeB.tvInfo?.eps.toString() ?? '0') ?? 0;
+            int epsA = (a as dynamic).tvInfo?.eps ?? 0;
+            int epsB = (b as dynamic).tvInfo?.eps ?? 0;
             return epsB.compareTo(epsA); // Descending order
           });
           break;
@@ -2010,15 +1641,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         children: [
           GestureDetector(
             onTap: () {
-              if (isExpanded) {
-                setState(() {
+              setState(() {
+                if (_expandedGenres.contains(genre)) {
                   _expandedGenres.remove(genre);
-                });
-              } else {
-                setState(() {
+                } else {
                   _expandedGenres.add(genre);
-                });
-              }
+                }
+              });
             },
             child: Container(
               padding: EdgeInsets.all(12),
@@ -2064,77 +1693,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: isExpanded
                   ? Padding(
                       padding: const EdgeInsets.only(top: 12),
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          // Check if we have cached data for this genre
-                          if (_genreCache.containsKey(genre)) {
-                            List<anime_models.Anime> cachedAnime = _genreCache[genre]!.take(5).toList();
-                            return SizedBox(
-                              height: 280,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: cachedAnime.length,
-                                itemBuilder: (context, index) {
-                                  final anime = cachedAnime[index];
-                                  return AnimeCard(
-                                    anime: anime,
-                                    type: AnimeCardType.standard,
-                                    onTap: () => _navigateToAnimeDetail(anime.id),
-                                  );
-                                },
-                              ),
+                      child: SizedBox(
+                        height: 280,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: min(animeList.length, 5),
+                          itemBuilder: (context, index) {
+                            final anime = _convertToAnime(animeList[index]);
+                            return AnimeCard(
+                              anime: anime,
+                              type: AnimeCardType.minimal,
+                              onTap: () => _navigateToAnimeDetail(anime.id),
                             );
-                          } else {
-                            // If not cached, fetch from the provider
-                            return FutureBuilder<response_models.CategoryResponse>(
-                              future: ref.watch(categoryProvider(genre).future),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.done && 
-                                    snapshot.hasData && 
-                                    snapshot.data != null) {
-                                  final items = snapshot.data?.data ?? const <anime_models.Anime>[];
-                                  final genreAnime = items.take(5).toList();
-                                  
-                                  // Cache the results for this genre
-                                  _genreCache[genre] = genreAnime;
-                                  
-                                  return SizedBox(
-                                    height: 280,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: genreAnime.length,
-                                      itemBuilder: (context, index) {
-                                        final anime = genreAnime[index];
-                                        return AnimeCard(
-                                          anime: anime,
-                                          type: AnimeCardType.standard,
-                                          onTap: () => _navigateToAnimeDetail(anime.id),
-                                        );
-                                      },
-                                    ),
-                                  );
-                                } else {
-                                  // Show the fallback mostPopular list while loading or on error
-                                  return SizedBox(
-                                    height: 280,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: min(animeList.length, 5),
-                                      itemBuilder: (context, index) {
-                                        final anime = _convertToAnime(animeList[index]);
-                                        return AnimeCard(
-                                          anime: anime,
-                                          type: AnimeCardType.standard,
-                                          onTap: () => _navigateToAnimeDetail(anime.id),
-                                        );
-                                      },
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                          }
-                        },
+                          },
+                        ),
                       ),
                     )
                   : null,

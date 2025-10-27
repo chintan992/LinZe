@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:linze/core/constants/constants.dart';
 
 class GenreChip extends StatefulWidget {
   final String genre;
@@ -26,13 +27,17 @@ class _GenreChipState extends State<GenreChip>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
     
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
     
   }
 
@@ -76,16 +81,16 @@ class _GenreChipState extends State<GenreChip>
             scale: _scaleAnimation.value,
             child: Container(
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: widget.isSelected 
-                    ? const Color(0xFF5B13EC)
-                    : const Color(0xFF2A2A2A),
-                borderRadius: BorderRadius.circular(25),
+                    ? primaryColor
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: widget.isSelected 
-                      ? const Color(0xFF5B13EC)
-                      : const Color(0xFF3A3A3A),
+                      ? primaryColor
+                      : dividerColor,
                   width: 1,
                 ),
               ),
@@ -94,7 +99,7 @@ class _GenreChipState extends State<GenreChip>
                 style: GoogleFonts.plusJakartaSans(
                   color: widget.isSelected 
                       ? Colors.white
-                      : const Color(0xFFEAEAEA),
+                      : textSecondaryColor,
                   fontSize: 14,
                   fontWeight: widget.isSelected 
                       ? FontWeight.w600

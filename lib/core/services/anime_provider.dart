@@ -95,3 +95,83 @@ final episodeThumbnailsProvider = FutureProvider.family<Map<String, String>, Str
   final apiService = ref.read(apiServiceProvider);
   return await apiService.getEpisodeThumbnails(animeId);
 });
+
+// Tab-specific providers
+final forYouTabProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final homeData = await ref.watch(homePageProvider.future);
+  final featuredSpotlight = homeData.spotlights.isNotEmpty ? homeData.spotlights.first : null;
+  final featuredAnime = featuredSpotlight != null 
+      ? Anime(
+          id: featuredSpotlight.id,
+          dataId: featuredSpotlight.dataId,
+          poster: featuredSpotlight.poster,
+          title: featuredSpotlight.title,
+          japaneseTitle: featuredSpotlight.japaneseTitle,
+          description: featuredSpotlight.description,
+          tvInfo: TvInfo(
+            showType: featuredSpotlight.tvInfo.showType,
+            duration: featuredSpotlight.tvInfo.duration,
+            sub: featuredSpotlight.tvInfo.sub,
+            dub: featuredSpotlight.tvInfo.dub,
+            eps: featuredSpotlight.tvInfo.eps,
+          ),
+        )
+      : null;
+  return {
+    'featuredAnime': featuredAnime,
+    'continueWatching': [], // Mock data for now, will be replaced with real data in future phases
+    'recommended': homeData.mostPopular.take(10).toList(),
+    'topAiring': homeData.topAiring.take(20).toList(),
+    'genres': homeData.genres.take(5).toList(), // First 5 genres for "Your Genres" section
+  };
+});
+
+final trendingTabProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final homeData = await ref.watch(homePageProvider.future);
+  return {
+    'topTrending': homeData.trending,
+    'topAiring': homeData.topAiring,
+    'mostPopular': homeData.mostPopular,
+    'genres': homeData.genres,
+  };
+});
+
+final newTabProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final homeData = await ref.watch(homePageProvider.future);
+  return {
+    'latestEpisodes': homeData.latestEpisode,
+    'schedule': homeData.today, // Assuming today contains schedule info
+    'latestCompleted': homeData.latestCompleted,
+  };
+});
+
+final genresTabProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final homeData = await ref.watch(homePageProvider.future);
+  // Combine lists for genre filtering
+  final allAnime = [
+    ...homeData.topAiring,
+    ...homeData.mostPopular,
+    ...homeData.mostFavorite,
+  ];
+  return {
+    'genres': homeData.genres,
+    'allAnime': allAnime,
+  };
+});
+
+final myListTabProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  // For now, return empty/mock data structure
+  // This will be enhanced in later phases to integrate with watchlist service
+  return {
+    'currentlyWatching': [],
+    'planToWatch': [],
+    'completed': [],
+  };
+});
+
+// Forwarding providers with requested names to maintain compatibility
+final forYouProvider = forYouTabProvider;
+final trendingProvider = trendingTabProvider;
+final newProvider = newTabProvider;
+final genresProvider = genresTabProvider;
+final myListProvider = myListTabProvider;
